@@ -21,8 +21,8 @@ To verfy this ros node, followings are required
    $ rosrun ros_podo_connector ros_podo_connector
 
 2. Launch MoveIT! configuration
+
    $ roslaunch mobile_hubo_omniWH_config demo.launch
-   
    1) Move joints
    2) click plan and execute
    

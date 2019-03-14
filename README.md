@@ -12,8 +12,18 @@ To verfy this ros node, followings are required
 * mobile hubo moveit configuration (This can be replaced any ros node which publish joint_state) 
 
 
+</br></br>
+
 1. RUN "ros_podo_connector"
 
    $ ros core
  
    $ rosrun ros_podo_connector ros_podo_connector
+
+2. Launch MoveIT! configuration
+   $ roslaunch mobile_hubo_omniWH_config demo.launch
+   1) Move joints
+   2) click plan and execute
+   
+   
+3.RUN PODO with Qt editor

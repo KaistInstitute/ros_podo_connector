@@ -14,7 +14,7 @@ To verfy this ros node, followings are required
 
 </br>
 
-''1. RUN "ros_podo_connector"''
+1. RUN "ros_podo_connector"
 
    $ ros core
  

@@ -1,8 +1,9 @@
 # ros_podo_connector
 ros2podo 
 
+This ros node is for delivering desired joint angles(joint reference) to PODO framework to move mobile hubo.
 
-Run ros_podo_connector node
+To run "ros_podo_connector"
 
 $ roscore
 

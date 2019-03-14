@@ -6,7 +6,7 @@ Since the high level program(intelligence module) developers are usually more fa
 
 "ros_podo_connector" subscribes topic "joint_state", a desired joint angles, and deliver it to PODO framework through TCP/IP communication.
 
-To verfy this ros node you need
+To verfy this ros node, followings are required
 * ros project "ros_podo_connector"
 * PODO
 * mobile hubo moveit configuration (This can be replaced any ros node which publish joint_state) 
@@ -14,6 +14,6 @@ To verfy this ros node you need
 
 1. RUN "ros_podo_connector"
 
- $ ros core
+   $ ros core
  
- $ rosrun ros_podo_connector ros_podo_connector
+   $ rosrun ros_podo_connector ros_podo_connector

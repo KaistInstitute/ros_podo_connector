@@ -23,6 +23,8 @@ To verfy this ros node, followings are required
 
 2. Launch MoveIT! configuration
 
+   $ cd ~/catkin_ws && catkin_make
+   $ source devel/setup.bash
    $ roslaunch mobile_hubo_omniWH_config demo.launch
    1) Move joints
    2) click plan and execute

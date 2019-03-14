@@ -27,4 +27,4 @@ To verfy this ros node, followings are required
    2) click plan and execute
    
    
-3.RUN PODO with Qt editor
+3. RUN PODO with Qt editor

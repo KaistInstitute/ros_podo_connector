@@ -1,12 +1,17 @@
-# ros_podo_connector
-ros2podo 
+# ros_podo_connector(ROS2PODO)
 
-This ros node is for delivering desired joint angles(joint reference) to PODO framework to move mobile hubo.
+A ros node "ros_podo_connector" is developed for the users who are not familiar with PODO frameworks.
 
-To run "ros_podo_connector"
+Since the high level program(intelligence) developers are usually more familiar with ROS environment, it is easier to move robot through a ros node. However, it is impossible to run Mobile hubo with out HUBO LAB's private robot framework, PODO, a node which connects ros environment and PODO frameworks.
 
-$ roscore
+"ros_podo_connector" subscribes topic "joint_state", a desired joint angles, and deliver it to PODO framework through TCP/IP communication.
 
-$ rosrun ros_podo_connector
+To verfy this ros node you need
+* ros project "ros_podo_connector"
+* PODO
+* mobile hubo moveit configuration (This can be replaced any ros node which publish joint_state) 
 
-*To verify this ros node, you need PODO and moveit_configuration files.
+
+1. RUN "ros_podo_connector"
+ $ ros core
+ $ rosrun ros_podo_connector ros_podo_connector

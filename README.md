@@ -8,6 +8,7 @@ Since the high level program(intelligence module) developers are usually more fa
 
 </br>
 To verfy this ros node, followings are required
+
 * ros project "ros_podo_connector"
 * PODO
 * mobile hubo moveit configuration (This can be replaced any ros node which publish joint_state) 

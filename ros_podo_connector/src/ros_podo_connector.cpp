@@ -55,8 +55,8 @@ void joint_states_callback(const sensor_msgs::JointState& joint_state_msg){
        std::cout<< "callback is called" << std::endl;
 
        //Match Joint names
-       for(int i=0; i< NO_OF_JOINTS; i++){ //joints in "joint_state" are listed in different order with the joints in joint_information.h
-           for(int j=0; j< NUM_JOINTS; j++){                           //go through all the joint names of "joint_states"
+       for(int i=0; i< NUM_JOINTS; i++){ //joints in "joint_state" are listed in different order with the joints in joint_information.h
+           for(int j=0; j< joint_state_msg.name.size(); j++){                           //go through all the joint names of "joint_states"
                if(JointBufferNameList[i] == joint_state_msg.name[j]){  // store the joint information only when joint name matches
                     TXData.ros2podo_data.joint[i].reference = joint_state_msg.position[j];  //Joint Reference
                     TXData.ros2podo_data.joint[i].move_mode = MOVE_PUBLISH;                 //Move mode
@@ -64,7 +64,7 @@ void joint_states_callback(const sensor_msgs::JointState& joint_state_msg){
                }
            }
        }
-        write(sock, &TXData, TXDataSize);
+       write(sock, &TXData, TXDataSize);
 
    }
 }

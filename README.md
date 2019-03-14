@@ -2,7 +2,7 @@
 
 A ros node, "ros_podo_connector", is developed for the users who are not familiar with PODO frameworks and about to run mobile hubo provided by HUBO LAB.
 
-Since the high level program(intelligence module) developers are usually more familiar with ROS environment, it is easier to move robot through a ros node. However, it is impossible to run Mobile hubo with out HUBO LAB's private robot framework, PODO, a node which connects ros environment and PODO frameworks.
+Since the high level program(intelligence module) developers are usually more familiar with ROS environment, it is easier to move robot through a ros node. However, it is impossible to run Mobile hubo without HUBO LAB's private robot framework, PODO, a node which connects ros environment and PODO frameworks is required.
 
 "ros_podo_connector" subscribes topic "joint_state", a desired joint angles, and deliver it to PODO framework through TCP/IP communication.
 

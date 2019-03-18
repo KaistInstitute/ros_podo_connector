@@ -16,6 +16,7 @@ Since the high level program(intelligence module) developers are usually more fa
 
 </br>
 
+# RUNNING
 1. RUN "ros_podo_connector"
 
    $ ros core

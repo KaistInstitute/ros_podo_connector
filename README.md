@@ -1,4 +1,4 @@
-## ros_podo_connector(ROS2PODO)
+# ros_podo_connector(ROS2PODO)
 
 A ros node, "ros_podo_connector", is developed for the users who are not familiar with PODO frameworks and about to run a mobile hubo(a real robot) provided by HUBO LAB.
 
@@ -16,7 +16,7 @@ Since the high level program(intelligence module) developers are usually more fa
 
 </br>
 
-# RUNNING
+## RUNNING
 1. RUN "ros_podo_connector"
 
    $ ros core

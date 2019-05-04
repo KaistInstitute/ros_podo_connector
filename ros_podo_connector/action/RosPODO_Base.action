@@ -1,0 +1,17 @@
+#goal definition
+int32 command
+float64 MoveX
+float64 MoveY
+float64 ThetaDeg
+
+---
+#result definition
+float64 MoveX
+float64 MoveY
+float64 ThetaDeg
+int32 result_flag
+---
+#feedback
+float64 MoveX
+float64 MoveY
+float64 ThetaDeg

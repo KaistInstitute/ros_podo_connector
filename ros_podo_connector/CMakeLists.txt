@@ -8,26 +8,64 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   tf
   nav_msgs
+  actionlib
+  actionlib_msgs
 )
 
-generate_messages(DEPENDENCIES std_msgs)
+find_package(Boost REQUIRED COMPONENTS system)
+
+## Generate messages in the 'msg' folder
+ add_message_files(
+   FILES
+   JointData.msg
+   WbikData.msg
+)
+
+## Generate actions in the 'action' folder
+ add_action_files(
+   FILES
+   RosPODOmotion.action
+   RosPODO_Base.action
+   RosPODO_Arm.action
+ )
+
+## Generate added messages and services with any dependencies listed here
+ generate_messages(
+   DEPENDENCIES
+   actionlib_msgs
+   std_msgs
+ )
 
 
 
+include_directories(
+# include
+  ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+)
 
-include_directories(${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-
+#node for TX/RX with PODO software
 add_executable(ros_podo_connector src/ros_podo_connector.cpp)
 add_dependencies(ros_podo_connector drc_podo_connector_generate_messages_cpp)
 target_link_libraries(ros_podo_connector ${catkin_LIBRARIES})
 
-add_executable(exportCSV src/exportCSV.cpp)
-add_dependencies(exportCSV drc_podo_connector_generate_messages_cpp)
-target_link_libraries(exportCSV ${catkin_LIBRARIES})
+#node for creating CSV file
+#add_executable(exportCSV src/exportCSV.cpp)
+#add_dependencies(exportCSV drc_podo_connector_generate_messages_cpp)
+#target_link_libraries(exportCSV ${catkin_LIBRARIES})
 
+#node for action server
+#add_executable(action_server_podo src/action_server.cpp)
+#add_dependencies(action_server_podo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(action_server_podo ${catkin_LIBRARIES})
+
+#node for action client
+add_executable(action_client_podo src/action_client.cpp)
+add_dependencies(action_client_podo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(action_client_podo ${catkin_LIBRARIES})
 
 catkin_package(
-  DEPENDS
-    roscpp
-    std_msgs
+#  INCLUDE_DIRS include
+ CATKIN_DEPENDS actionlib actionlib_msgs message_generation roscpp std_msgs
+ DEPENDS Boost
 )

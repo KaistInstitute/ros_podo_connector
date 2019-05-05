@@ -1,5 +1,5 @@
 #goal definition
-int32 command
+int32 wheelmove_cmd
 float64 MoveX
 float64 MoveY
 float64 ThetaDeg

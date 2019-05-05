@@ -27,6 +27,7 @@ find_package(Boost REQUIRED COMPONENTS system)
    RosPODOmotion.action
    RosPODO_Base.action
    RosPODO_Arm.action
+   RosPODO_Gripper.action
  )
 
 ## Generate added messages and services with any dependencies listed here

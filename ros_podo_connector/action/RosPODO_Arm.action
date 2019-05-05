@@ -1,5 +1,5 @@
 #goal definition
-int32 command
+int32 jointmove_cmd
 JointData[18] joint_ref
 WbikData[6] wbik_ref
 

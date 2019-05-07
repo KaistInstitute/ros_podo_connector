@@ -66,11 +66,11 @@ int main (int argc, char **argv)
   goal_arm.jointmove_cmd = MODE_MOVE_JOINT;
   goal_arm.joint_ref[rosREB].OnOffControl = CONTROL_ON;
   goal_arm.joint_ref[rosREB].reference = -30.0;
-  goal_arm.joint_ref[rosREB].GoalmsTime = 3000;
+  goal_arm.joint_ref[rosREB].GoalmsTime = 6000;
   
   goal_arm.joint_ref[rosLEB].OnOffControl = CONTROL_ON;
   goal_arm.joint_ref[rosLEB].reference = -30.0;
-  goal_arm.joint_ref[rosLEB].GoalmsTime = 3000;
+  goal_arm.joint_ref[rosLEB].GoalmsTime = 6000;
   
   ac_arm.sendGoal(goal_arm);
   ros::Duration(3).sleep();

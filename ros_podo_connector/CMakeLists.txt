@@ -65,8 +65,17 @@ add_executable(action_client_podo src/action_client.cpp)
 add_dependencies(action_client_podo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(action_client_podo ${catkin_LIBRARIES})
 
+#node for action client
+add_executable(store_action src/store_application_client.cpp)
+add_dependencies(store_action ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(store_action ${catkin_LIBRARIES})
+
+
+
 catkin_package(
 #  INCLUDE_DIRS include
  CATKIN_DEPENDS actionlib actionlib_msgs message_generation roscpp std_msgs
  DEPENDS Boost
 )
+
+SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")

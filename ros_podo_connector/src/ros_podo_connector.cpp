@@ -3,6 +3,10 @@
 #include "ros/ros.h"
 #include <actionlib/server/simple_action_server.h>
 
+/*custom defined header to TCP/IP to PODO */
+#include "ROSLANData.h"
+
+
 /*Pre-defined Action msg for PODO motion */
 #include <ros_podo_connector/RosPODOmotionAction.h>
 #include <ros_podo_connector/RosPODO_BaseAction.h>
@@ -23,8 +27,9 @@
 #include <geometry_msgs/Twist.h>
 #include <boost/thread/thread.hpp>
 
-/*custom defined header to TCP/IP to PODO */
-#include "ROSLANData.h"
+/*for multi-threaded locks */
+#include <mutex>
+std::mutex variable_lock;
 
 
 /* =============TCP/IP  global variables initialize ============= */
@@ -36,7 +41,7 @@ int sock = 0;
 struct sockaddr_in  server;
 
 pthread_t LANTHREAD_t;
-int threadWorking = false;
+int threadWorking = true;
 int connectionStatus = false;
 int ON_publish = true;
 
@@ -274,6 +279,7 @@ void writeTX()
 /*clear TXBuffer to default values*/
 void clearTXBuffer()
 {
+	//std::lock_guard<std::mutex> lock(variable_lock);
 	//reset command
 	TXData.ros2podo_data.CMD_JOINT = static_cast<JOINTMOVE_CMD>(0);
 	TXData.ros2podo_data.CMD_GRIPPER = static_cast<GRIPPERMOVE_CMD>(0);
@@ -299,6 +305,7 @@ void clearTXBuffer()
 /*clear RXBuffer to default values*/
 void clearRXBuffer()
 {
+	//std::lock_guard<std::mutex> lock(variable_lock);
 	//reset done flag
 	RXData.podo2ros_data.Arm_feedback.result_flag = 0;
 	RXData.podo2ros_data.Base_feedback.result_flag = 0;
@@ -321,7 +328,8 @@ protected:
   std::string action_name_;
 
   bool baseMotionSuccess = false;
-  
+  bool motionStarted = false;
+  	
   // create messages that are used to published feedback&result
   ros_podo_connector::RosPODO_BaseFeedback feedback_;
   ros_podo_connector::RosPODO_BaseResult result_;
@@ -336,11 +344,11 @@ public:
     action_name_(name)
   {
     asBase_.start();
-
   }
 
   ~RosPODO_BaseAction(void)
   {
+	  
   }
 
 /*Call Back function when goal is received from Action client*/
@@ -349,7 +357,7 @@ public:
 	clearTXBuffer();
 
     // loop this thread to check status of goal
-    ros::Rate r(10);
+    ros::Rate r(200);
     
 
     
@@ -359,15 +367,17 @@ public:
     //=====execute action for robot motion========
     
     //write TX to podo
-    
+    	
     TXData.ros2podo_data.CMD_WHEEL = static_cast<WHEELMOVE_CMD>(goal->wheelmove_cmd);
     TXData.ros2podo_data.Base_action.wheel.MoveX = goal->MoveX;
     TXData.ros2podo_data.Base_action.wheel.MoveY = goal->MoveY;
     TXData.ros2podo_data.Base_action.wheel.ThetaDeg = goal->ThetaDeg;
     write(sock, &TXData, TXDataSize);
     
+    ros::Duration(5).sleep();
+    asBase_.setSucceeded(result_);
     
-    
+    /* test goal loop
     //while loop to check until goal is finished
     while(baseMotionSuccess == false)
     {
@@ -375,6 +385,7 @@ public:
 	}
 	ROS_INFO("base action done: %i\n", baseMotionSuccess); 
 	asBase_.setSucceeded(result_);
+	*/
 
   }
 
@@ -394,7 +405,7 @@ public:
   void publishResult()
   {
 	  
-	  if(RXData.podo2ros_data.Base_feedback.result_flag)
+	  if(motionStarted == true && RXData.podo2ros_data.Base_feedback.result_flag)
 	  {
 		  
 		  result_.MoveX = feedback_.MoveX;
@@ -431,6 +442,7 @@ protected:
   actionlib::SimpleActionServer<ros_podo_connector::RosPODO_ArmAction> asArm_; 
   std::string action_name_;
   bool armMotionSuccess = false;
+  bool motionStarted = false;
   
   // create messages that are used to published feedback&result
   ros_podo_connector::RosPODO_ArmFeedback feedback_;
@@ -450,6 +462,7 @@ public:
 
   ~RosPODO_ArmAction(void)
   {
+	  
   }
 
 /*Call Back function when goal is received from Action client*/
@@ -458,7 +471,7 @@ public:
 	clearTXBuffer();
 
     // helper variables
-    ros::Rate r(10);
+    ros::Rate r(200);
     
 
     
@@ -523,7 +536,11 @@ public:
 
 	//write TXdata
     write(sock, &TXData, TXDataSize);
+    ros::Duration(5).sleep();
+    asArm_.setSucceeded(result_);
+           
     
+    /* test goal send
     //while loop to check until goal is finished
     while(armMotionSuccess == false)
     {
@@ -531,6 +548,7 @@ public:
 	}
 	ROS_INFO("arm action done: %i\n", armMotionSuccess); 
 	asArm_.setSucceeded(result_);
+	*/ 
 
   }
   
@@ -548,7 +566,7 @@ public:
 		  feedback_.joint_ref[i].GoalmsTime = RXData.podo2ros_data.Arm_feedback.joint[i].GoalmsTime;
 
 	  }
-	  /*
+	  
 	  //arm wbik feedback
 	  for(int i = 0; i < NUM_PARTS;  i++)
 	  {
@@ -563,7 +581,7 @@ public:
 		  feedback_.wbik_ref[i].goal_orientation[3] = RXData.podo2ros_data.Arm_feedback.wbik[i].Goal_quat[3];
 		  feedback_.wbik_ref[i].goal_angle = RXData.podo2ros_data.Arm_feedback.wbik[i].Goal_angle;
 		  feedback_.wbik_ref[i].GoalmsTime = RXData.podo2ros_data.Arm_feedback.wbik[i].GoalmsTime;  
-	  }*/
+	  }
 	  
 	  //ADD JOINT PUBLISH
 	  
@@ -577,7 +595,7 @@ public:
   void publishResult()
   {  
 	  //received done flag from PODO
-	  if(RXData.podo2ros_data.Arm_feedback.result_flag)
+	  if(motionStarted == true && RXData.podo2ros_data.Arm_feedback.result_flag)
 	  {
 		  
 		  //arm joint feedback
@@ -589,7 +607,7 @@ public:
 
 		  }
 		  
-		  /*
+		  
 		  //arm wbik feedback
 		  for(int i = 0; i < NUM_PARTS;  i++)
 		  {
@@ -604,7 +622,7 @@ public:
 			  result_.wbik_ref[i].goal_orientation[3] = feedback_.wbik_ref[i].goal_orientation[3];
 			  result_.wbik_ref[i].goal_angle = feedback_.wbik_ref[i].goal_angle;
 			  result_.wbik_ref[i].GoalmsTime = feedback_.wbik_ref[i].GoalmsTime;  
-		  }*/
+		  }
 	  
 		  result_.result_flag = 1;
 		  ROS_INFO("Finished arm action: %i\n", result_.result_flag ); 
@@ -636,6 +654,7 @@ protected:
   ros::NodeHandle nh_gripper;
   actionlib::SimpleActionServer<ros_podo_connector::RosPODO_GripperAction> asGripper_; 
   std::string action_name_;
+  bool motionStarted = false;
   
   // create messages that are used to published feedback&result
   ros_podo_connector::RosPODO_GripperFeedback feedback_;
@@ -752,16 +771,20 @@ int initializeSocket()
         TXDataSize = sizeof(LAN_ROS2PODO);
         RXBuffer = (void*)malloc(RXDataSize);
         TXBuffer = (void*)malloc(TXDataSize);
+        
+        /*
         int threadID = pthread_create(&LANTHREAD_t, NULL, &LANThread, NULL);
         if(threadID < 0){
             ROS_ERROR("Create Thread Error..");
             return 0;
-        }
-    }else{
+        }*/
+    }
+    else{
         ROS_ERROR("Create Socket Error..");
         ROS_ERROR("Terminate Node..");
         return 0;
     }    
+    
 }
 
 
@@ -792,7 +815,48 @@ int Connect2Server()
     return true;
 }
 
+void testLAN()
+{
+	
+	static unsigned int tcp_status = 0x00;
+    static int tcp_size = 0;
+    static int connectCnt = 0;
 
+    if(threadWorking){
+        usleep(100);
+        if(tcp_status == 0x00){
+            // If client was not connected
+            if(sock == 0){
+                CreateSocket(ip, PODO_PORT);
+            }
+            if(Connect2Server()){
+                tcp_status = 0x01;
+                connectionStatus = true;
+                connectCnt = 0;
+            }else{
+                if(connectCnt%10 == 0)
+                    //std::cout << "Connect to Server Failed.." << std::endl;
+                connectCnt++;
+            }
+            usleep(1000*1000);
+        }
+        if(tcp_status == 0x01){
+            // If client was connected
+            tcp_size = read(sock, RXBuffer, RXDataSize);
+            if(tcp_size == RXDataSize){
+                memcpy(&RXData, RXBuffer, RXDataSize);
+            }
+
+            if(tcp_size == 0){
+                tcp_status = 0x00;
+                connectionStatus = false;
+                close(sock);
+                sock = 0;
+                std::cout << "Socket Disconnected.." << std::endl;
+            }
+        }
+    }
+}
 
 void* LANThread(void *){
     threadWorking = true;
@@ -847,7 +911,7 @@ int main(int argc, char **argv)
 	//Initialize ROS node
 	ros::init(argc, argv, "ros_podo_connector");
     ros::NodeHandle n;
-    ros::Rate loop_rate(1);
+    ros::Rate loop_rate(200);
     
     // Create Socket 
 	initializeSocket();
@@ -859,15 +923,13 @@ int main(int argc, char **argv)
 	ROS_INFO("Starting ROS2PODO Action Servers");
 	
     
-    static int cnt = 0;
-    //Subscribe topic "joint_states"
-    TXData.ros2podo_data.index = 0;
-    
-  
+   
 	/* === main while loop to RX feedback calls at regular periods === */
     while(ros::ok())
     {
 		
+		testLAN();
+
 		//check if action server is active
         if(rospodo_base.returnServerStatus())
         {
@@ -881,11 +943,11 @@ int main(int argc, char **argv)
 			rospodo_arm.publishResult();
 		}
 		
+
 		
         if( flag2 == true)
         {
-            ROS_INFO("flag is: %i\n",flag2);
-            cnt = 0;
+            //ROS_INFO("flag is: %i\n",flag2);
             //flag1 = true;
 //            testJointMove();
             //testWheel();

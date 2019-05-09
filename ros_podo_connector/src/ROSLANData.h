@@ -2,11 +2,7 @@
 #define ROSLANDATA_H
 
 #include "JointInformation.h"
-//#include "RosCommand.h"
 #include "ROS_COMMUNICATION.h"
-#include "ROS_COMMAND.h"
-#include "ROS_DATA.h"
-#include "PODO_STATE.h"
 
 #ifndef __LAN_STRUCT_GENERAL_COMMAND_DEF__
 #define __LAN_STRUCT_GENERAL_COMMAND_DEF__
@@ -21,17 +17,14 @@ typedef struct __LAN_STRUCT_GENERAL_COMMAND_
 
 #endif
 
-
-
 typedef struct __LAN_STRUCT_ROS2PODO__
 {
     float   vx;
     float   vth;
+
     float   pos[3];
-
     ROS2PODO_DATA ros2podo_data;
-
-} LAN_ROS2PODO, *pLAN_ROS2PODO;
+} LAN_ROS2PODO,*pLAN_ROS2PODO;
 
 typedef struct __LAN_STRUCT_PODO2ROS__
 {

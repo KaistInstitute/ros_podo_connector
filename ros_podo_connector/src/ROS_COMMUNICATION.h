@@ -24,6 +24,7 @@ typedef struct _PODO2ROS_DATA_
 {
     MANIPULATOR_ACTION  Arm_feedback;
     BASE_ACTION         Base_feedback;
+    GRIPPER_ACTION      Gripper_feedback;
 
     SENSOR_DATA sensor;
     ROBOT_STATE_ARM  state_arm;
@@ -36,12 +37,14 @@ typedef struct _ROS_SHM_
 {
     ROS_COMMAND COMMAND;
 
+    int ROSindex;
     MANIPULATOR_ACTION  Arm_action;
     BASE_ACTION         Base_action;
     GRIPPER_ACTION      Gripper_action;
 
     MANIPULATOR_ACTION  Arm_feedback;
     BASE_ACTION         Base_feedback;
+    GRIPPER_ACTION      Gripper_feedback;
 
     JOINT_DATA joint_before[NUM_JOINTS];
     ROBOT_STATE_ARM  state_arm;

@@ -78,4 +78,5 @@ catkin_package(
  DEPENDS Boost
 )
 
-SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")
+# includethis for mutex lock
+#SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")

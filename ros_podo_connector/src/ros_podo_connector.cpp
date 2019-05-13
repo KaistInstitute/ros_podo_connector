@@ -3,6 +3,7 @@
  *
  * This ROS node is Action Server handler for Mobile-Hubo Platform.
  * Receives ROS Action msgs {Base, Arm, Gripper} and TX/RX to PODO Software Framework.
+ * In order for correct operation, please ensure PODO Software version is 'MobileHubo_ROSmotion' inside Hubo Motion PC.
  * Refer to ROSPodo Motion Manual at www.kirobotics.com
  * 
  *

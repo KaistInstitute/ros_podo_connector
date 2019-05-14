@@ -35,12 +35,10 @@ int main (int argc, char **argv)
   
   /* ============== Go2Display Action  ==============  */
   goal_base.wheelmove_cmd = 1;
-  goal_base.MoveX = 3.0;
+  goal_base.MoveX = -3.0;
   goal_base.MoveY = 0.0;
   goal_base.ThetaDeg = 0;
   ac_base.sendGoal(goal_base);
-  
-  //ros::Duration(2).sleep();
   
   goal_arm.jointmove_cmd = MODE_MOVE_JOINT;
   goal_arm.joint_ref[rosWST].OnOffControl = CONTROL_ON;
@@ -53,38 +51,29 @@ int main (int argc, char **argv)
   
   ac_arm.sendGoal(goal_arm);
   
-  goal_gripper.grippermove_cmd = GRIPPER_OPEN;
-  goal_gripper.mode = GRIPPER_RIGHT;
-  ac_gripper.sendGoal(goal_gripper);
-
-  
-  ros::Duration(5).sleep();
+  ros::Duration(6).sleep();
 
 		  
   /* ============== Grasp Action ==============  */
   
-  
-  /*
-  
+
   goal_gripper.grippermove_cmd = GRIPPER_OPEN;
   goal_gripper.mode = GRIPPER_RIGHT;
   ac_gripper.sendGoal(goal_gripper);
-  ros::Duration(2).sleep();
-  
+
   goal_arm.jointmove_cmd = 3;
   goal_arm.wbik_ref[RIGHT_HAND].OnOff_position = CONTROL_ON;
   goal_arm.wbik_ref[RIGHT_HAND].goal_position[0] = 0.6;
   goal_arm.wbik_ref[RIGHT_HAND].goal_position[1] = -0.3;
   goal_arm.wbik_ref[RIGHT_HAND].goal_position[2] = 0.2;
-  goal_arm.wbik_ref[RIGHT_HAND].GoalmsTime = 2000;
-  
+  goal_arm.wbik_ref[RIGHT_HAND].GoalmsTime = 3000;
   
   goal_arm.wbik_ref[RIGHT_ELBOW].OnOff_position = CONTROL_ON;
   goal_arm.wbik_ref[RIGHT_ELBOW].goal_angle = -30.0;
-  goal_arm.wbik_ref[RIGHT_ELBOW].GoalmsTime = 2000;
+  goal_arm.wbik_ref[RIGHT_ELBOW].GoalmsTime = 3000;
   
   ac_arm.sendGoal(goal_arm);
-  ros::Duration(2).sleep();
+  ros::Duration(4).sleep();
   
   goal_gripper.grippermove_cmd = GRIPPER_CLOSE;
   goal_gripper.mode = GRIPPER_RIGHT;
@@ -93,54 +82,31 @@ int main (int argc, char **argv)
   
   /* ============== Go2Home Action  ==============  */
   
-  /*
   goal_base.wheelmove_cmd = 1;
-  goal_base.MoveX = -3.0;
+  goal_base.MoveX = 3.0;
   goal_base.MoveY = 0.0;
   goal_base.ThetaDeg = 0;
   ac_base.sendGoal(goal_base);
   
+  ros::Duration(2).sleep();
+  
   goal_arm.jointmove_cmd = MODE_MOVE_JOINT;
-  goal_arm.joint_ref[WAIST].OnOffControl = CONTROL_ON;
-  goal_arm.joint_ref[WAIST].reference = 180.0;
-  goal_arm.joint_ref[WAIST].GoalmsTime = 5000;
+  goal_arm.joint_ref[rosWST].OnOffControl = CONTROL_ON;
+  goal_arm.joint_ref[rosWST].reference = 0.0;
+  goal_arm.joint_ref[rosWST].GoalmsTime = 5000;
+  
+  
+  goal_arm.joint_ref[rosRWY2].OnOffControl = CONTROL_ON;
+  goal_arm.joint_ref[rosRWY2].reference = -14.0;
+  goal_arm.joint_ref[rosRWY2].GoalmsTime = 5000;
+  
   ac_arm.sendGoal(goal_arm);
   
-  ros::Duration(5).sleep();
+  ros::Duration(6).sleep();
   
   goal_gripper.grippermove_cmd = GRIPPER_OPEN;
   goal_gripper.mode = GRIPPER_RIGHT;
   ac_gripper.sendGoal(goal_gripper);
-  */
-  
-    
-    /* ============== Arm Data Action JOINT ==============  */
-  
-  //goal_arm.jointmove_cmd = MODE_MOVE_JOINT;
-  //goal_arm.joint_ref[rosREB].OnOffControl = CONTROL_ON;
-  //goal_arm.joint_ref[rosREB].reference = -30.0;
-  //goal_arm.joint_ref[rosREB].GoalmsTime = 6000;
-  
-  //goal_arm.joint_ref[rosLEB].OnOffControl = CONTROL_ON;
-  //goal_arm.joint_ref[rosLEB].reference = -30.0;
-  //goal_arm.joint_ref[rosLEB].GoalmsTime = 6000;
-  
-  //ac_arm.sendGoal(goal_arm);
-  //ros::Duration(3).sleep();
-  
-  
-  /* ============== Arm Data Action JOINT PUBLISH ==============  */
-  
-  
-  
-
-  /* ============== Gripper Data Action  ==============  */
-  //goal_gripper.grippermove_cmd = GRIPPER_OPEN;
-  //goal_gripper.mode = GRIPPER_BOTH;
-  
-  //ac_gripper.sendGoal(goal_gripper);
-  //ros::Duration(3).sleep();
-
 
     
   //wait for the action to return

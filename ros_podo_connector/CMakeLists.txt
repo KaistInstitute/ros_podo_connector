@@ -70,6 +70,12 @@ add_executable(store_action src/store_application_client.cpp)
 add_dependencies(store_action ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(store_action ${catkin_LIBRARIES})
 
+#node for action client
+add_executable(joint_publish_client src/joint_publish_client.cpp)
+add_dependencies(joint_publish_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(joint_publish_client ${catkin_LIBRARIES})
+
+
 
 
 catkin_package(

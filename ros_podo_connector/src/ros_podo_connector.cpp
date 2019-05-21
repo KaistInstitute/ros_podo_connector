@@ -344,70 +344,76 @@ public:
     //Map the arm move .action to TXData for cases {publish joint, joint, wbik, estop, save}
     switch(static_cast<JOINTMOVE_CMD>(goal->jointmove_cmd))
     {
-		case MODE_JOINT_PUBLISH:
-		{
-			//ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
-			break;
-		}
-		
-		case MODE_MOVE_JOINT:
-		{
-			//ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
-			for(int i = 0; i < NUM_JOINTS; i++)
-			{
-				TXData.ros2podo_data.Arm_action.joint[i].ONOFF_control = goal->joint_ref[i].OnOffControl;
-				TXData.ros2podo_data.Arm_action.joint[i].reference = goal->joint_ref[i].reference;
-				TXData.ros2podo_data.Arm_action.joint[i].GoalmsTime = goal->joint_ref[i].GoalmsTime;
-			}
-			break;
-		}
-		
-		case MODE_SET_WBIK:
-		{
-			//ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
-			for(int i = 0; i < NUM_PARTS;  i++)
-			{
-				TXData.ros2podo_data.Arm_action.wbik[i].ONOFF_movepos = goal->wbik_ref[i].OnOff_position;
-				TXData.ros2podo_data.Arm_action.wbik[i].ONOFF_moveori = goal->wbik_ref[i].OnOff_orientation;
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_pos[0] = goal->wbik_ref[i].goal_position[0];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_pos[1] = goal->wbik_ref[i].goal_position[1];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_pos[2] = goal->wbik_ref[i].goal_position[2];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[0] = goal->wbik_ref[i].goal_orientation[0];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[1] = goal->wbik_ref[i].goal_orientation[1];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[2] = goal->wbik_ref[i].goal_orientation[2];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[3] = goal->wbik_ref[i].goal_orientation[3];
-				TXData.ros2podo_data.Arm_action.wbik[i].Goal_angle = goal->wbik_ref[i].goal_angle;
-				TXData.ros2podo_data.Arm_action.wbik[i].GoalmsTime = goal->wbik_ref[i].GoalmsTime;
-			}
-			break;
-		}
-		
-		case MODE_E_STOP:
-		{
-			//ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
-			break;
-		}
-		
-		case MODE_SAVE:
-		{
-			//ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
-			break;
-		}
-	}
+            case MODE_JOINT_PUBLISH:
+            {
+                    //ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
+                    for(int i = 0; i < NUM_JOINTS; i++)
+                    {
+                        TXData.ros2podo_data.Arm_action.joint[i].ONOFF_control = goal->joint_ref[i].OnOffControl;
+                        TXData.ros2podo_data.Arm_action.joint[i].reference = goal->joint_ref[i].reference;
+                    }
+                    armMotionSuccess = true;
+                    break;
+            }
+
+            case MODE_MOVE_JOINT:
+            {
+                    //ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
+                    for(int i = 0; i < NUM_JOINTS; i++)
+                    {
+                            TXData.ros2podo_data.Arm_action.joint[i].ONOFF_control = goal->joint_ref[i].OnOffControl;
+                            TXData.ros2podo_data.Arm_action.joint[i].reference = goal->joint_ref[i].reference;
+                            TXData.ros2podo_data.Arm_action.joint[i].GoalmsTime = goal->joint_ref[i].GoalmsTime;
+                    }
+                    break;
+            }
+
+            case MODE_SET_WBIK:
+            {
+                    //ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
+                    for(int i = 0; i < NUM_PARTS;  i++)
+                    {
+                            TXData.ros2podo_data.Arm_action.wbik[i].ONOFF_movepos = goal->wbik_ref[i].OnOff_position;
+                            TXData.ros2podo_data.Arm_action.wbik[i].ONOFF_moveori = goal->wbik_ref[i].OnOff_orientation;
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_pos[0] = goal->wbik_ref[i].goal_position[0];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_pos[1] = goal->wbik_ref[i].goal_position[1];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_pos[2] = goal->wbik_ref[i].goal_position[2];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[0] = goal->wbik_ref[i].goal_orientation[0];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[1] = goal->wbik_ref[i].goal_orientation[1];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[2] = goal->wbik_ref[i].goal_orientation[2];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_quat[3] = goal->wbik_ref[i].goal_orientation[3];
+                            TXData.ros2podo_data.Arm_action.wbik[i].Goal_angle = goal->wbik_ref[i].goal_angle;
+                            TXData.ros2podo_data.Arm_action.wbik[i].GoalmsTime = goal->wbik_ref[i].GoalmsTime;
+                    }
+                    break;
+            }
+
+            case MODE_E_STOP:
+            {
+                    //ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
+                    break;
+            }
+
+            case MODE_SAVE:
+            {
+                    //ROS_INFO("%s: 1 Received Arm Motion with Command: %i\n", action_name_.c_str(), goal->jointmove_cmd);
+                    break;
+            }
+    }
     
 
-	//write TXdata
+    //write TXdata
     write(sock, &TXData, TXDataSize);
     ROS_INFO("CMD Grip: %i, Base: %i, Arm: %i, \n",TXData.ros2podo_data.CMD_GRIPPER,  TXData.ros2podo_data.CMD_WHEEL, TXData.ros2podo_data.CMD_JOINT);	
  
     //while loop to check until goal is finished
     while(armMotionSuccess == false)
     {
-		r.sleep();
-	}
-	//ROS_INFO("arm action done: %i\n", armMotionSuccess); 
-	asArm_.setSucceeded(result_);
-	//clearTXBuffer(); 
+         r.sleep();
+    }
+    //ROS_INFO("arm action done: %i\n", armMotionSuccess);
+    asArm_.setSucceeded(result_);
+    //clearTXBuffer();
 
   }
   
@@ -794,50 +800,50 @@ void LANthread_update()
 /*========================== main while loop ==================================*/
 int main(int argc, char **argv)
 {
-	printInitialInfo();
-	//Initialize ROS node
-	ros::init(argc, argv, "ros_podo_connector");
+    printInitialInfo();
+    //Initialize ROS node
+    ros::init(argc, argv, "ros_podo_connector");
     ros::NodeHandle n;
     ros::Rate loop_rate(200);
     
     // Create Socket 
-	initializeSocket();
+    initializeSocket();
 	
    //Initialize ROS Action Server for TX to PODO
-	RosPODO_BaseAction rospodo_base("rospodo_base");
-	RosPODO_ArmAction rospodo_arm("rospodo_arm");
-	RosPODO_GripperAction rospodo_gripper("rospodo_gripper");
-	ROS_INFO("Starting ROS2PODO Action Servers");
+    RosPODO_BaseAction rospodo_base("rospodo_base");
+    RosPODO_ArmAction rospodo_arm("rospodo_arm");
+    RosPODO_GripperAction rospodo_gripper("rospodo_gripper");
+    ROS_INFO("Starting ROS2PODO Action Servers");
 	
     
    
-	/* === main while loop to RX feedback calls at regular periods === */
+    /* === main while loop to RX feedback calls at regular periods === */
     while(ros::ok())
     {
-		//update RX values from PODO
-		LANthread_update();
+        //update RX values from PODO
+        LANthread_update();
 
-		//check if action server is active
+        //check if action server is active
 
         if(rospodo_base.returnServerStatus())
         {
-			rospodo_base.publishFeedback();
-			rospodo_base.publishResult();
-		}
+                rospodo_base.publishFeedback();
+                rospodo_base.publishResult();
+        }
 
-		if(rospodo_arm.returnServerStatus())
+        if(rospodo_arm.returnServerStatus())
         {
-			rospodo_arm.publishFeedback();
-			rospodo_arm.publishResult();
-		}
+                rospodo_arm.publishFeedback();
+                rospodo_arm.publishResult();
+        }
 
-		if(rospodo_gripper.returnServerStatus())
+        if(rospodo_gripper.returnServerStatus())
         {
-			rospodo_gripper.publishResult();
-		}
-       
-		//loop at desired rate 
-		ros::spinOnce();
+                rospodo_gripper.publishResult();
+        }
+
+        //loop at desired rate
+        ros::spinOnce();
         loop_rate.sleep();
     }
     return 0;

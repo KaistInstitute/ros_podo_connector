@@ -8,15 +8,8 @@ Since the high level program(intelligence module) developers are usually more fa
 
 </br>
 
-## To test this ros node, followings are required
 
-* ros project "ros_podo_connector"
-* PODO
-* mobile hubo moveit configuration (This can be replaced any ros node which publish joint_state) 
-
-</br>
-
-## RUNNING
+## RUNNING joint_state_publish mode
 1. RUN "ros_podo_connector"
 
    $ ros core

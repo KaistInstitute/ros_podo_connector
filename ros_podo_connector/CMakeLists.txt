@@ -50,20 +50,6 @@ add_executable(ros_podo_connector src/ros_podo_connector.cpp)
 add_dependencies(ros_podo_connector drc_podo_connector_generate_messages_cpp)
 target_link_libraries(ros_podo_connector ${catkin_LIBRARIES})
 
-#node for creating CSV file
-#add_executable(exportCSV src/exportCSV.cpp)
-#add_dependencies(exportCSV drc_podo_connector_generate_messages_cpp)
-#target_link_libraries(exportCSV ${catkin_LIBRARIES})
-
-#node for action server
-#add_executable(action_server_podo src/action_server.cpp)
-#add_dependencies(action_server_podo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(action_server_podo ${catkin_LIBRARIES})
-
-#node for action client
-add_executable(action_client_podo src/action_client.cpp)
-add_dependencies(action_client_podo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(action_client_podo ${catkin_LIBRARIES})
 
 #node for action client
 add_executable(store_action src/store_application_client.cpp)

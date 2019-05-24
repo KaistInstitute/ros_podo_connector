@@ -1,4 +1,3 @@
-
 /* =============================================================
  *
  * This ROS node is Action Server handler for Mobile-Hubo Platform.
@@ -21,7 +20,7 @@
  * 			/rospodo_arm/goal
 			/rospodo_gripper/goal
  
- * 
+ * E-mail : ml634@kaist.ac.kr     (Lee Moonyoung)
  * E-mail : blike4@kaist.ac.kr    (Heo Yujin)
  * E-mail : chosaihim@kaist.ac.kr (Cho Saihim)
  *
@@ -145,9 +144,7 @@ void clearTXBuffer()
     //TXData.ros2podo_data.Arm_action.wbik[NUM_PARTS]
     TXData.ros2podo_data.Arm_action.result_flag = 0;
 
-    //TXData.ros2podo_data.Base_action.wheel.MoveX = 0;
-    //TXData.ros2podo_data.Base_action.wheel.MoveY = 0;
-    //TXData.ros2podo_data.Base_action.wheel.ThetaDeg = 0;
+
     TXData.ros2podo_data.Base_action.result_flag = 0;
 
     //TXData.ros2podo_data.Gripper_action.mode = 0;
@@ -434,7 +431,7 @@ public:
         }
         //ROS_INFO("arm action done: %i\n", armMotionSuccess);
         asArm_.setSucceeded(result_);
-        //clearTXBuffer();
+ 
 
     }
   
@@ -633,7 +630,7 @@ public:
 
         //ROS_INFO("gripper action done %i\n", gripperMotionSuccess);
         asGripper_.setSucceeded(result_);
-        //clearTXBuffer();
+
 
     }
 

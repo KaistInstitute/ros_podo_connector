@@ -1,3 +1,24 @@
+/* =============================================================
+ *
+ * This ROS node is Action Client that enables motion on Mobile Hubo Platform
+ * This is only an example file to serve as a tutorial for new teams developing on Mobile Hubo Platform.
+ * In order for correct operation, please ensure PODO Software version is 'MobileHubo_ROSmotion' inside Hubo Motion PC.
+ * Refer to ROSPodo Motion Manual at www.kirobotics.com
+ * 
+ *
+ * Output : /rospodo_base/goal
+ * 			/rospodo_arm/goal
+ * 			/rospodo_gripper/goal
+ *  
+ * E-mail : ml634@kaist.ac.kr     (Lee Moonyoung)
+ * E-mail : blike4@kaist.ac.kr    (Heo Yujin)
+ * E-mail : chosaihim@kaist.ac.kr (Cho Saihim)
+ *
+ * Versions :
+ * v1.0.2019.05
+ * =============================================================
+ */
+ 
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>

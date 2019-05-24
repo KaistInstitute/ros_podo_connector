@@ -31,6 +31,9 @@ const std::string JointBufferNameList[NUM_JOINTS] = {
     "WST", "RWH", "LWH", "BWH"
 };
 
+//debugging
+ros::Publisher inter_joint_states_pub;
+sensor_msgs::JointState inter_joint_states;
 
 void joint_states_callback(const sensor_msgs::JointState& joint_state_msg){
 
@@ -87,8 +90,22 @@ int main (int argc, char **argv)
     ros::NodeHandle n;
     joint_states_sub = n.subscribe("joint_states", 100, joint_states_callback);
 
+    //debugging:: Interpolated joint_states
+    inter_joint_states_pub = n.advertise<sensor_msgs::JointState>("inter_joint_states",1);
+    inter_joint_states.name.resize(NUM_JOINTS);
+    inter_joint_states.position.resize(NUM_JOINTS);
+
+    //initializing
+    for(int i=0; i< NUM_JOINTS; i++){
+        inter_joint_states.name[i] = JointBufferNameList[i];
+    }
+
+
+
     ros::Time tzero(0);
     ros::Time beginTime = ros::Time::now();
+    double beginTime_d = ros::Time::now().toSec();
+    double nowNow;
 
     ros::Rate loop_rate(200);
 
@@ -98,6 +115,8 @@ int main (int argc, char **argv)
     while(ros::ok())
     {
         ros::spinOnce();
+        nowNow = ros::Time::now().toSec();
+        std::cout << "last loop took " << (nowNow - beginTime_d) * 1000 << "msecs." << std::endl;
 
         //First CB called
         if(CB_flag == 1){
@@ -119,16 +138,26 @@ int main (int argc, char **argv)
                 d_ref[i] = (curr_ref[i] - prev_ref[i]) / prev_cnt;
                 goal_arm.joint_ref[i].reference += d_ref[i]*R2Df;
                 goal_arm.joint_ref[i].OnOffControl = CONTROL_ON;
+
+                //debugging
+                inter_joint_states.position[i] = goal_arm.joint_ref[i].reference;     //debugging
             }
             goal_arm.jointmove_cmd = MODE_JOINT_PUBLISH;
 
+            //debugging(publishing a topic for sub_test node)
+            inter_joint_states_pub.publish(inter_joint_states);     //debugging
+
             // send a goal to the action
             ac_arm.sendGoal(goal_arm);
+
+//            static int cnt_toServer = 0;
+//            std::cout << "count to Server: " << cnt_toServer++ << std::endl;
         }
 
         loop_cnt++;
         //std::cout << "Loop Counter = " << loop_cnt << std::endl;  //debugging
         loop_rate.sleep();
+        beginTime_d = ros::Time::now().toSec();
     }
 
     //exit

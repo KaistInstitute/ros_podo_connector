@@ -121,7 +121,7 @@ planner_configs:
     dense_delta_fraction: 0.001  # delta fraction for interface detection. default: 0.001
     max_failures: 5000  # maximum consecutive failure limit. default: 5000
 L_arm:
-  default_planner_config: RRTConnect
+  default_planner_config: RRTConnec
   planner_configs:
     - SBL
     - EST
@@ -149,7 +149,7 @@ L_arm:
   projection_evaluator: joints(LSP,LSR)
   longest_valid_segment_fraction: 0.005
 R_arm:
-  default_planner_config: RRTConnect
+  default_planner_config: RRTConnec
   planner_configs:
     - SBL
     - EST
@@ -177,7 +177,7 @@ R_arm:
   projection_evaluator: joints(RSP,RSR)
   longest_valid_segment_fraction: 0.005
 L_hand:
-  default_planner_config: None
+  default_planner_config: ""
   planner_configs:
     - SBL
     - EST
@@ -205,7 +205,7 @@ L_hand:
   projection_evaluator: joints(LWY2,LHAND_a1)
   longest_valid_segment_fraction: 0.005
 R_hand:
-  default_planner_config: None
+  default_planner_config: ""
   planner_configs:
     - SBL
     - EST
@@ -233,7 +233,7 @@ R_hand:
   projection_evaluator: joints(RWY2,RHAND_a1)
   longest_valid_segment_fraction: 0.005
 WST:
-  default_planner_config: None
+  default_planner_config: ""
   planner_configs:
     - SBL
     - EST
@@ -259,7 +259,7 @@ WST:
     - SPARS
     - SPARStwo
 wheels:
-  default_planner_config: RRTConnect
+  default_planner_config: RRTConnec
   planner_configs:
     - SBL
     - EST

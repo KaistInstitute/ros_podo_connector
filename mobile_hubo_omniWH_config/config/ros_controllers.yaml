@@ -114,7 +114,7 @@ mobile_hubo_omniWH:
       default: True
       type: FollowJointTrajectory
       joints:
-        WST
+        []
     - name: wheels_controller
       action_ns: follow_joint_trajectory
       default: True

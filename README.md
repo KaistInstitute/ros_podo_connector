@@ -1,28 +1,20 @@
-# ros_podo_connector(ROS2PODO)
+# ros_podo_connector overview
 
-A ros node, "ros_podo_connector", is developed for the users who are not familiar with PODO frameworks and about to run a mobile hubo(a real robot) provided by HUBO LAB.
-
-Since the high level program(intelligence module) developers are usually more familiar with ROS environment, it is easier to move robot through a ros node. However, it is impossible to run Mobile hubo without HUBO LAB's private robot framework, PODO. Therefore, a node which connects ros environment and PODO frameworks is required.
-
-"ros_podo_connector" subscribes topic "joint_state" and delivers it to PODO framework through TCP/IP communication.
+ros_podo_connector provides a ROS interface specifically for generating motion for the Mobile
+Hubo Platform developed by KAIST Hubo Lab.
+The API utilizes standard ROS actionlib package to control robot's base, arm, and gripper
+motion. This interface abstracts the low-level control implemented in the custom real-time
+PODO software, such as trajectory and IK solvers, and hence allows developers to focus on
+high-level task planning for more complex sequence of behaviors
 
 </br>
 
 
-## RUNNING joint_state_publish mode
-1. RUN "ros_podo_connector"
+## Tutorial & Maunal
+Can be found in this link:
+http://www.kirobotics.com/w/index.php?title=Hand:ROSmotion_Page
 
-   $ ros core
- 
-   $ rosrun ros_podo_connector ros_podo_connector
+Maintainers
+----
 
-2. Launch MoveIT! configuration
-
-   $ cd ~/catkin_ws && catkin_make
-   $ source devel/setup.bash
-   $ roslaunch mobile_hubo_omniWH_config demo.launch
-   1) Move joints
-   2) click plan and execute
-   
-   
-3. RUN PODO with Qt editor
+KAIST HUBO LAB - ML634@kaist.ac.kr

@@ -615,7 +615,7 @@ public:
         //write TX to podo
 
         TXData.ros2podo_data.CMD_GRIPPER = static_cast<GRIPPERMOVE_CMD>(goal->grippermove_cmd);
-        TXData.ros2podo_data.Gripper_action.mode = goal->mode;
+        TXData.ros2podo_data.Gripper_action.side = goal->gripper_side;
 
         write(sock, &TXData, TXDataSize);
         ROS_INFO("CMD Grip: %i, Base: %i, Arm: %i, \n",TXData.ros2podo_data.CMD_GRIPPER,  TXData.ros2podo_data.CMD_WHEEL, TXData.ros2podo_data.CMD_JOINT);

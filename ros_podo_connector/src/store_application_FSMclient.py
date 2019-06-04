@@ -128,7 +128,7 @@ class GOTO_DISPLAY(smach.State):
 
 
         # send gripper goal with desired parameters
-        goal_gripper = ros_podo_connector.msg.RosPODO_GripperGoal(grippermove_cmd = 2, mode = 1)
+        goal_gripper = ros_podo_connector.msg.RosPODO_GripperGoal(grippermove_cmd = 2, gripper_side = 1)
         ac_gripper.send_goal(goal_gripper)
         gripper_result_flag = False
 
@@ -220,7 +220,7 @@ class GRASP(smach.State):
         rospy.Subscriber("/rospodo_gripper/result",RosPODO_GripperActionResult, gripper_result_callback, queue_size=1, buff_size=10)
 
         # send gripper goal with desired parameters
-        goal_gripper = ros_podo_connector.msg.RosPODO_GripperGoal(grippermove_cmd = 3, mode = 1)
+        goal_gripper = ros_podo_connector.msg.RosPODO_GripperGoal(grippermove_cmd = 3, gripper_side = 1)
         ac_gripper.send_goal(goal_gripper)
         gripper_result_flag = False
 

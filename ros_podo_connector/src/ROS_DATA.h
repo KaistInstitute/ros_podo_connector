@@ -83,7 +83,8 @@ typedef struct _ROS_ACTION_BASE_
 
 typedef struct _ROS_ACTION_GRIPPER_
 {
-    int mode;
+    int side;
+    double desired_mm;
     int result_flag;
 }GRIPPER_ACTION;
 

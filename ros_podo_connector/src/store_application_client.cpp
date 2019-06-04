@@ -84,7 +84,7 @@ int main (int argc, char **argv)
   goal_arm.joint_ref[rosRWY2].OnOffControl = CONTROL_OFF;
   
   goal_gripper.grippermove_cmd = GRIPPER_OPEN;
-  goal_gripper.mode = GRIPPER_RIGHT;
+  goal_gripper.gripper_side = GRIPPER_RIGHT;
   ac_gripper.sendGoal(goal_gripper);
   
 
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
   ros::Duration(4).sleep();
   
   goal_gripper.grippermove_cmd = GRIPPER_CLOSE;
-  goal_gripper.mode = GRIPPER_RIGHT;
+  goal_gripper.gripper_side = GRIPPER_RIGHT;
   ac_gripper.sendGoal(goal_gripper);
    ros::Duration(2).sleep();
   
@@ -128,7 +128,7 @@ int main (int argc, char **argv)
   ros::Duration(6).sleep();
   
   goal_gripper.grippermove_cmd = GRIPPER_OPEN;
-  goal_gripper.mode = GRIPPER_RIGHT;
+  goal_gripper.gripper_side = GRIPPER_RIGHT;
   ac_gripper.sendGoal(goal_gripper);
 
     

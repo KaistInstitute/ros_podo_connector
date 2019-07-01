@@ -38,7 +38,6 @@ typedef struct _ROS_JOINTREF_
     JOINT_DATA joint[NUM_JOINTS];
 }__attribute__((packed))ROS_JOINTREF;
 
-
 typedef struct _ROS_SHM_
 {
     ROS_COMMAND COMMAND;
@@ -53,7 +52,6 @@ typedef struct _ROS_SHM_
     GRIPPER_ACTION      Gripper_feedback;
 
     JOINT_DATA joint_before[NUM_JOINTS];
-
     ROBOT_STATE_ARM  state_arm;
     ROBOT_STATE_BASE state_base;
 
@@ -61,6 +59,7 @@ typedef struct _ROS_SHM_
     ROS_JOINTREF             ref;
     int                      refsLen;
     double                   refsGoalTime[NUM_JOINTS];
+
 }ROS_SHM, *pROS_SHM;
 
 

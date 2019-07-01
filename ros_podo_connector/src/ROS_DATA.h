@@ -72,6 +72,10 @@ typedef struct _ROS_ACTION_MANIPULATOR_
     int result_flag;
 }MANIPULATOR_ACTION;
 
+//typedef struct _ROS_ACTION_TRAJECTORY_
+//{
+//    JOINT_DATA joint[NUM_JOINTS];
+//}__attribute__((packed))TRAJECTORY_ACTION;
 
 typedef struct _ROS_ACTION_BASE_
 {

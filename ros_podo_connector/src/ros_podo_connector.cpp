@@ -1,4 +1,4 @@
-﻿
+
 /* =============================================================
  *
  * This ROS node is Action Server handler for Mobile-Hubo Platform.
@@ -640,7 +640,7 @@ public:
         //write TX to podo
 
         TXData.ros2podo_data.CMD_GRIPPER = static_cast<GRIPPERMOVE_CMD>(goal->grippermove_cmd);
-        TXData.ros2podo_data.Gripper_action.mode = goal->mode;
+        TXData.ros2podo_data.Gripper_action.side = goal->mode;
 
         write(sock, &TXData, TXDataSize);
         ROS_INFO("CMD Grip: %i, Base: %i, Arm: %i, \n",TXData.ros2podo_data.CMD_GRIPPER,  TXData.ros2podo_data.CMD_WHEEL, TXData.ros2podo_data.CMD_JOINT);
@@ -742,12 +742,6 @@ public:
 
     }
 
-    enum TRAJECTORY_CMD
-    {
-        MOVE_ABSOLUTE = 0,
-        MOVE_RELATIVE
-    };
-
 
     void executeCB(const ros_podo_connector::RosPODO_TrajGoalConstPtr &goal)
     {
@@ -756,35 +750,32 @@ public:
         std::cout << "x: " << goal->x ;
         std::cout << ", y: " << goal->y ;
         std::cout << ", z: " << goal->z ;
-        std::cout << ", ori_w: " << goal->ori_w ;
-        std::cout << ", ori_x: " << goal->ori_x ;
-        std::cout << ", ori_y: " << goal->ori_y ;
-        std::cout << ", ori_z: " << goal->ori_z ;
-        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
+        std::cout << ", Theta: " << goal->ThetaDeg << std::endl;
 
         /* MOVEIT INTERFACE*/
         // Setup
-        // static const std::string PLANNING_GROUP = "L_arm";
-        static const std::string PLANNING_GROUP = goal->planGroup;
+        static const std::string PLANNING_GROUP = "Rarm";
         moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+        moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
-        /// Raw pointers are frequently used to refer to the planning group for improved performance.
+        // Raw pointers are frequently used to refer to the planning group for improved performance.
         const robot_state::JointModelGroup* joint_model_group =
             move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
-        /// Visualization
+        // Visualization
         namespace rvt = rviz_visual_tools;
         moveit_visual_tools::MoveItVisualTools visual_tools("base_footprint"); //STANDARD FRAME
         visual_tools.deleteAllMarkers();
         visual_tools.loadRemoteControl();
 
-        /// Text Visualization:
+        // Text Visualization:
+        // Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
         Eigen::Affine3d text_pose = Eigen::Affine3d::Identity();
         text_pose.translation().z() = 1.5;
-//        visual_tools.publishText(text_pose, "MoveGroupInterface Demo", rvt::WHITE, rvt::XLARGE);
-        visual_tools.publishText(text_pose, "Attempting", rvt::WHITE, rvt::XLARGE);
+        visual_tools.publishText(text_pose, "MoveGroupInterface Demo", rvt::WHITE, rvt::XLARGE);
 
         // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
+        visual_tools.trigger();
 
         // Getting Basic Information
         // We can print the name of the reference frame for this robot.
@@ -799,47 +790,13 @@ public:
 
         // Planning to a Pose goal
         geometry_msgs::Pose target_pose1;
-        switch(goal->traj_cmd)
-        {
-            case MOVE_ABSOLUTE:
-            {
-                std::cout << std::endl << "MOVE ABSOLUTE" << std::endl;
-                target_pose1.position.x = goal->x;
-                target_pose1.position.y = goal->y;
-                target_pose1.position.z = goal->z;
-                target_pose1.orientation.w = goal->ori_w;
-                target_pose1.orientation.x = goal->ori_x;
-                target_pose1.orientation.y = goal->ori_y;
-                target_pose1.orientation.z = goal->ori_z;
-                break;
-            }
-            case MOVE_RELATIVE:
-            {
-                std::cout << std::endl << "MOVE RELATIVE" << std::endl;
-                target_pose1.position.x = move_group.getCurrentPose().pose.position.x + goal->x;
-                target_pose1.position.y = move_group.getCurrentPose().pose.position.y + goal->y;
-                target_pose1.position.z = move_group.getCurrentPose().pose.position.z + goal->z;
-                target_pose1.orientation.w = move_group.getCurrentPose().pose.orientation.w + goal->ori_w;
-                target_pose1.orientation.x = move_group.getCurrentPose().pose.orientation.x + goal->ori_x;
-                target_pose1.orientation.y = move_group.getCurrentPose().pose.orientation.y + goal->ori_y;
-                target_pose1.orientation.z = move_group.getCurrentPose().pose.orientation.z + goal->ori_z;
-
-                break;
-            }
-        }
-
-        std::cout << "Move to x: " << target_pose1.position.x ;
-        std::cout << ", y: " << target_pose1.position.y ;
-        std::cout << ", z: " << target_pose1.position.z << std::endl;
-        std::cout << ", ori_w: " << target_pose1.orientation.w ;
-        std::cout << ", ori_x: " << target_pose1.orientation.x ;
-        std::cout << ", ori_y: " << target_pose1.orientation.y ;
-        std::cout << ", ori_z: " << target_pose1.orientation.z << std::endl;
-        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
-
+        target_pose1.position.x = move_group.getCurrentPose().pose.position.x + goal->x;
+        target_pose1.position.y = move_group.getCurrentPose().pose.position.y + goal->y;
+        target_pose1.position.z = move_group.getCurrentPose().pose.position.z + goal->z;
+        target_pose1.orientation.w = move_group.getCurrentPose().pose.orientation.w + goal->ThetaDeg;
 
         move_group.setPoseTarget(target_pose1);
-        move_group.setPlannerId("RRT");
+        visual_tools.publishAxisLabeled(target_pose1, "pose1");
 
         // Now, we call the planner to compute the plan and visualize it. // Note that we are just planning,
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -848,8 +805,8 @@ public:
 
         // Visualizing plans
         ROS_INFO_NAMED("tutorial", "Visualizing plan 1 as trajectory line");
-//        visual_tools.publishText(text_pose, "PLANNING", rvt::WHITE, rvt::XLARGE);
-        visual_tools.publishAxisLabeled(target_pose1, "Goal Pose");
+        visual_tools.publishAxisLabeled(target_pose1, "pose1");
+        visual_tools.publishText(text_pose, "Pose Goal", rvt::WHITE, rvt::XLARGE);
         visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group); //TRAJECTORY*******************************************************//
 
         if(success)
@@ -857,95 +814,83 @@ public:
 
         visual_tools.trigger();
 
+
         //TEST
-        moveit_msgs::RobotTrajectory msg = my_plan.trajectory_;
+        moveit_msgs::RobotTrajectory msg;
+        msg = my_plan.trajectory_;
         std::vector<trajectory_msgs::MultiDOFJointTrajectoryPoint> trajectory_points;
         std::vector<int>::size_type size1 = msg.joint_trajectory.points.size();
 
+        double time_begin =ros::Time::now().toSec();
+
         if(success)
         {
-            visual_tools.publishText(text_pose, "PLAN SUCCESS", rvt::WHITE, rvt::XLARGE);
             //Debug
             std::cout << std::endl;
             std::cout << "Trajectory points: " << msg.joint_trajectory.points.size() << std::endl;
             std::cout << "Num of joints in planning group: " << msg.joint_trajectory.joint_names.size() << std::endl;
 
-            //WRITE TO PODO
-            //Port 5500; Send MODE CMD
-            TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
-            write(sock, &TXData, TXDataSize);
+//            //WRITE TO PODO
+//            //Port 5500; Send MODE CMD
+//            TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
+//            write(sock, &TXData, TXDataSize);
 
             //WRITE TO PODO; Send TRAJECTORY
-            //if(CreateSocket_new(PODO_ADDR, PODO_TRAJ_PORT)==false)
-            //    printf("Socket new make fail\n");
-            //else
-            //    printf("Socket new make success\n");
-
-            TRAJECTORY_ACTION Traj_action[msg.joint_trajectory.points.size()];
-
-            for(int p=0; p<size1; p++){    //p: points of Trajectory
+//            if(CreateSocket_new(PODO_ADDR, PODO_TRAJ_PORT)==false)
+//                printf("Socket new make fail\n");
+//            else
+//                printf("Socket new make success\n");
+            ROS_JOINTREF Traj_action[msg.joint_trajectory.points.size()];
+            for(int p=0; p< size1; p++){    //p: points of Trajectory
                 for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
                 {
                     for(int traj_j=0; traj_j< msg.joint_trajectory.joint_names.size(); traj_j++)     // traj_j: trajectory joints
                     {
-                        //std::cout << traj_j << " Joint name: " << JointBufferNameList[robot_j] << " vs " << msg.joint_trajectory.joint_names[traj_j] << std::endl;
                         //only if joint name matches
                         if(JointBufferNameList[robot_j] == msg.joint_trajectory.joint_names[traj_j])
                         {
                             Traj_action[p].joint[robot_j].ONOFF_control = CONTROL_ON;
                             Traj_action[p].joint[robot_j].reference = msg.joint_trajectory.points[p].positions[traj_j];
                             if(p > 0)
-                                Traj_action[p].joint[robot_j].GoalmsTime = (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000;
+                                Traj_action[p].joint[robot_j].GoalmsTime =  (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec());
                             else
-                                Traj_action[p].joint[robot_j].GoalmsTime = 0.0;
+                                Traj_action[p].joint[robot_j].GoalmsTime = 0.;
                             break;
                         }
                         else {
                             Traj_action[p].joint[robot_j].ONOFF_control = CONTROL_OFF;
-                            Traj_action[p].joint[robot_j].reference = 0.0;
-                            Traj_action[p].joint[robot_j].GoalmsTime = 0.0;
+                            Traj_action[p].joint[robot_j].reference = 0.;
+                            Traj_action[p].joint[robot_j].GoalmsTime = 0.;
                         }
                     }
                 }
-                //DEBUGGING
-                std::cout << std::endl << "Point " << p << ": " << std::endl;
-                for (int i =0; i < NUM_JOINTS; i++)
-                    std::cout << "Joint " << JointBufferNameList[i]<< ": Reference= " << Traj_action[p].joint[i].reference << ", control= " << Traj_action[p].joint[i].ONOFF_control << ", time= "<< Traj_action[p].joint[i].GoalmsTime << std::endl;
-
-
             }
-            //WRITE TRAJECTORY TO PODO
-            //write(sock_traj, &Traj_action, sizeof(Traj_action));
+
+            write(sock_traj, &Traj_action, sizeof(Traj_action));
 
 
-            /*FILE *testFile = NULL;
-            testFile = fopen("/home/rainbow/catkin_ws/src/ros_podo_connector/ros_podo_connector/src/trajectory.txt","a");
-            if((testFile == NULL))
-                std::cout << "Failed to open trajectory.txt" << std::endl;
-            else{
-                for(int p=0; p<size1; p++)
+            //WRITE TO PODO
+            //Port 5500; Send MODE CMD
+            TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
+            printf("Size of ros2podo_data = %d\n",sizeof(TXData.ros2podo_data));
+            printf("Size of TX.ros2podo_data = %d\n",sizeof(TXData));
+            write(sock, &TXData, TXDataSize);
+
+
+            using namespace std;
+            cout << "==============Trajectory Print=============" << endl;
+            for(int i=0;i<size1;i++)
+                for(int j=0;j<NUM_JOINTS;j++)
                 {
-                    if(p == 0)
-                        fprintf(testFile,"%i, 0 ,",p);
-                    else
-                        fprintf(testFile,"%i, %d ,",p, (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000);
-                    for(int i=0; i<NUM_JOINTS; i++){
-                        fprintf(testFile,"%d, ", Traj_action[p].joint[i].reference);
-                    }
-                    fprintf(testFile,"\n");
+                    cout << i << "|" << j << "      ON : " << Traj_action[i].joint[j].ONOFF_control;
+                    cout << "       REF : " << Traj_action[i].joint[j].reference;
+                    cout << "       TIME : " << Traj_action[i].joint[j].GoalmsTime << endl;
                 }
-            }
-            fclose(testFile);*/
+            printf("write done\n");
         }
-        else {
-            visual_tools.publishText(text_pose, "PLAN failed", rvt::WHITE, rvt::XLARGE);
-        }
-
-
 
 
         //terminal status
-
         asTraj_.setSucceeded(result_);
 
     }
@@ -1034,7 +979,7 @@ int CreateSocket_new(const char *addr, int port){
     server_traj.sin_family = AF_INET;
     server_traj.sin_port = htons(port);
 
-    //printf("CreateSocket_new\n");
+    printf("CreateSocket_new\n");
     int optval = 1;
     setsockopt(sock_traj, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     setsockopt(sock_traj, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
@@ -1106,21 +1051,21 @@ void LANthread_update()
                 std::cout << "Socket Disconnected.." << std::endl;
             }
         }
-//        if(tcp_statustraj == 0x00){
-//            // If client was not connected
-//            if(sock_traj == 0){
-//                CreateSocket_new(ip, PODO_TRAJ_PORT);
-//            }
-//            if(Connect2ServerTraj()){
-//                tcp_statustraj = 0x01;
-//                connectCntTraj = 0;
-//            }else{
-//                if(connectCntTraj%10 == 0)
-//                    std::cout << "Connect to Server Failed Traj.." << std::endl;
-//                    connectCntTraj++;
-//            }
-//            //usleep(1000*1000);
-//        }
+        if(tcp_statustraj == 0x00){
+            // If client was not connected
+            if(sock_traj == 0){
+                CreateSocket_new(ip, PODO_TRAJ_PORT);
+            }
+            if(Connect2ServerTraj()){
+                tcp_statustraj = 0x01;
+                connectCntTraj = 0;
+            }else{
+                if(connectCntTraj%10 == 0)
+                    std::cout << "Connect to Server Failed Traj.." << std::endl;
+                    connectCntTraj++;
+            }
+            //usleep(1000*1000);
+        }
     }
 
 }

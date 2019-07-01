@@ -44,7 +44,7 @@ typedef struct _JOINT_DATA_
     int ONOFF_control;
     double reference;
     double GoalmsTime;
-} __attribute__((packed))JOINT_DATA;
+} __attribute__((packed)) JOINT_DATA;
 
 typedef struct _WBIK_DATA_
 {
@@ -72,10 +72,6 @@ typedef struct _ROS_ACTION_MANIPULATOR_
     int result_flag;
 }MANIPULATOR_ACTION;
 
-typedef struct _ROS_ACTION_TRAJECTORY_
-{
-    JOINT_DATA joint[NUM_JOINTS];
-}__attribute__((packed))TRAJECTORY_ACTION;
 
 typedef struct _ROS_ACTION_BASE_
 {
@@ -87,7 +83,8 @@ typedef struct _ROS_ACTION_BASE_
 
 typedef struct _ROS_ACTION_GRIPPER_
 {
-    int mode;
+    int side;
+    double desired_mm;
     int result_flag;
 }GRIPPER_ACTION;
 

@@ -6,14 +6,27 @@
 #include <ros_podo_connector/RosPODO_BaseAction.h>
 #include <ros_podo_connector/RosPODO_ArmAction.h>
 #include <ros_podo_connector/RosPODO_GripperAction.h>
+
 /*custom defined header to TCP/IP to PODO */
 #include "ROSLANData.h"
 
 
 #include <sensor_msgs/JointState.h>
-
 const float     D2Rf = 0.0174533;
 const float     R2Df = 57.2957802;
+
+
+const std::string JointBufferNameList[NUM_JOINTS] = {
+    "RSP", "RSR", "RSY", "REB", "RWY", "RWP", "RWY2",
+    "LSP", "LSR", "LSY", "LEB", "LWY", "LWP", "LWY2",
+    "WST", "RWH", "LWH", "BWH"
+};
+
+
+//subscriber
+ros::Subscriber joint_states_sub;
+sensor_msgs::JointState inter_joint_states;
+ros::Publisher inter_joint_states_pub;
 
 //variables
 int loop_cnt=0; //loop counter
@@ -22,22 +35,14 @@ double prev_ref[NUM_JOINTS]={0,};
 double curr_ref[NUM_JOINTS]={0,};
 
 int CB_flag = 0;
+int js_flag = 0;
 
-//subscriber
-ros::Subscriber joint_states_sub;
-const std::string JointBufferNameList[NUM_JOINTS] = {
-    "RSP", "RSR", "RSY", "REB", "RWY", "RWP", "RWY2",
-    "LSP", "LSR", "LSY", "LEB", "LWY", "LWP", "LWY2",
-    "WST", "RWH", "LWH", "BWH"
-};
 
-//debugging
-ros::Publisher inter_joint_states_pub;
-sensor_msgs::JointState inter_joint_states;
 
 void joint_states_callback(const sensor_msgs::JointState& joint_state_msg){
 
     CB_flag++;
+    js_flag = 1;
     prev_cnt = loop_cnt;
     loop_cnt = 0;
 
@@ -59,7 +64,7 @@ void joint_states_callback(const sensor_msgs::JointState& joint_state_msg){
 
 int main (int argc, char **argv)
 {
-    ros::init(argc, argv, "joint_publish_pub");
+    ros::init(argc, argv, "joint_publish_test1");
 
     /* ============== Arm Data Action JOINT PUBLISH ==============  */
 
@@ -94,41 +99,23 @@ int main (int argc, char **argv)
     double d_ref[NUM_JOINTS];
     ros::Rate loop_rate(200);
 
-    static int pub_cnt = 0;
 
     //Subscribe topic "joint_states"
     while(ros::ok())
     {
         ros::spinOnce();
 
-        //First CB called
-        if(CB_flag == 1){   //initial position
-            for(int i=0; i<NUM_JOINTS; i++){
-                inter_joint_states.position[i] = curr_ref[i]*R2Df;
-            }
+        for(int i=0; i<NUM_JOINTS; i++){
+            inter_joint_states.position[i] = curr_ref[i]*R2Df;
         }
 
-        // if CB is called more than once
-        if(CB_flag >1)
-        {
-            //interpolate
-            for(int i=0; i<NUM_JOINTS; i++){
-                d_ref[i] = (curr_ref[i] - prev_ref[i]) / prev_cnt;
-                inter_joint_states.position[i] += d_ref[i]*R2Df;
-            }
-
-            //debugging
-            inter_joint_states.position[NUM_JOINTS-1] = pub_cnt;        //debugging
-
+        if(js_flag)
             inter_joint_states_pub.publish(inter_joint_states);
 
-            std::cout << "cnt pub = " << pub_cnt++ << std::endl;  //debugging
+        js_flag = 0;
 
-        }
-
-        loop_cnt++;
-        //std::cout << "Loop Counter = " << loop_cnt << std::endl;  //debugging
         loop_rate.sleep();
+
     }
 
     //exit

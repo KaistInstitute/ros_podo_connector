@@ -1,17 +1,14 @@
 #goal definition
 int32 grippermove_cmd
-int32 gripper_side
-float64 gripper_desired_mm
-
+int32 gripper_parameter
+int32 mode
 
 ---
 #result definition
-int32 gripper_side
-float64 gripper_desired_mm
+int32 mode
 int32 result_flag
 
 ---
 #feedback
-int32 gripper_side
-float64 gripper_desired_mm
+int32 mode
 

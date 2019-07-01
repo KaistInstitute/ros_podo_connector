@@ -1,3 +1,4 @@
+﻿
 /* =============================================================
  *
  * This ROS node is Action Server handler for Mobile-Hubo Platform.
@@ -20,7 +21,7 @@
  * 			/rospodo_arm/goal
 			/rospodo_gripper/goal
  
- * E-mail : ml634@kaist.ac.kr     (Lee Moonyoung)
+ * 
  * E-mail : blike4@kaist.ac.kr    (Heo Yujin)
  * E-mail : chosaihim@kaist.ac.kr (Cho Saihim)
  *
@@ -42,6 +43,7 @@
 #include <ros_podo_connector/RosPODO_BaseAction.h>
 #include <ros_podo_connector/RosPODO_ArmAction.h>
 #include <ros_podo_connector/RosPODO_GripperAction.h>
+#include <ros_podo_connector/RosPODO_TrajAction.h>
 
 /*for TCP/IP socket client */
 #include <stdio.h>
@@ -57,6 +59,15 @@
 #include <geometry_msgs/Twist.h>
 #include <boost/thread/thread.hpp>
 
+/*for MoveIt! interface*/
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit_msgs/DisplayRobotState.h>
+#include <moveit_msgs/DisplayTrajectory.h>
+#include <moveit_msgs/AttachedCollisionObject.h>
+#include <moveit_msgs/CollisionObject.h>
+#include <moveit_visual_tools/moveit_visual_tools.h>
+
 /*for multi-threaded locks */
 //#include <mutex>
 //std::mutex variable_lock;
@@ -65,10 +76,13 @@
 /* =============TCP/IP  global variables initialize ============= */
 #define PODO_ADDR       "127.0.0.1"
 #define PODO_PORT       5000
+#define PODO_TRAJ_PORT  7000
 
 char ip[20];
 int sock = 0;
+int sock_traj = 0;
 struct sockaddr_in  server;
+struct sockaddr_in  server_traj;
 
 pthread_t LANTHREAD_t;
 int threadWorking = true;
@@ -94,7 +108,9 @@ const float     R2Df = 57.2957802;
 
 
 int     CreateSocket(const char *addr, int port);
+int     CreateSocket_new(const char *addr, int port);
 int     Connect2Server();
+int     Connect2ServerTraj();
 void*   LANThread(void*);
 
 
@@ -110,17 +126,24 @@ const std::string JointBufferNameList[NUM_JOINTS] = {
 ros::Subscriber inter_joint_states_sub;
 sensor_msgs::JointState inter_joint_states;
 
+
+/* CB for inter_joint_state(interpolated joint_states) */
 void inter_joint_states_callback(const sensor_msgs::JointState& inter_joint_state_msg){
 
-    //std::cout << "Interpolated Joint state has been Subscribed" << std::endl;
+//    std::cout << "Interpolated Joint state has been Subscribed" << std::endl;
 
-    for(int i=0; i< NUM_JOINTS-3; i++)
+    for(int i=0; i< NUM_JOINTS; i++)
     {
         TXData.ros2podo_data.Arm_action.joint[i].ONOFF_control = CONTROL_ON;
         TXData.ros2podo_data.Arm_action.joint[i].reference = inter_joint_state_msg.position[i];
     }
 
     TXData.ros2podo_data.CMD_JOINT = MODE_JOINT_PUBLISH;
+
+//    static int cb_cnt = 0;
+//    std::cout << " CB cnt = " << cb_cnt++;
+//    std::cout << " | pub cnt = "<< inter_joint_state_msg.position[NUM_JOINTS-1] << std::endl;
+
 
     write(sock, &TXData, TXDataSize);
 
@@ -144,7 +167,9 @@ void clearTXBuffer()
     //TXData.ros2podo_data.Arm_action.wbik[NUM_PARTS]
     TXData.ros2podo_data.Arm_action.result_flag = 0;
 
-
+    //TXData.ros2podo_data.Base_action.wheel.MoveX = 0;
+    //TXData.ros2podo_data.Base_action.wheel.MoveY = 0;
+    //TXData.ros2podo_data.Base_action.wheel.ThetaDeg = 0;
     TXData.ros2podo_data.Base_action.result_flag = 0;
 
     //TXData.ros2podo_data.Gripper_action.mode = 0;
@@ -431,7 +456,7 @@ public:
         }
         //ROS_INFO("arm action done: %i\n", armMotionSuccess);
         asArm_.setSucceeded(result_);
- 
+        //clearTXBuffer();
 
     }
   
@@ -615,7 +640,7 @@ public:
         //write TX to podo
 
         TXData.ros2podo_data.CMD_GRIPPER = static_cast<GRIPPERMOVE_CMD>(goal->grippermove_cmd);
-        TXData.ros2podo_data.Gripper_action.side = goal->gripper_side;
+        TXData.ros2podo_data.Gripper_action.mode = goal->mode;
 
         write(sock, &TXData, TXDataSize);
         ROS_INFO("CMD Grip: %i, Base: %i, Arm: %i, \n",TXData.ros2podo_data.CMD_GRIPPER,  TXData.ros2podo_data.CMD_WHEEL, TXData.ros2podo_data.CMD_JOINT);
@@ -630,7 +655,7 @@ public:
 
         //ROS_INFO("gripper action done %i\n", gripperMotionSuccess);
         asGripper_.setSucceeded(result_);
-
+        //clearTXBuffer();
 
     }
 
@@ -687,6 +712,248 @@ public:
 };
 /*========================== End of Gripper Action Server ==================================*/
 
+/*========================== Start of Traj Action Server ==================================*/
+class RosPODO_TrajAction
+{
+protected:
+
+    ros::NodeHandle nh_traj;
+    actionlib::SimpleActionServer<ros_podo_connector::RosPODO_TrajAction> asTraj_;
+    std::string action_name_;
+
+    bool TrajMotionSuccess = false;
+    bool motionStarted = false;
+
+    // create messages that are used to published feedback&result
+    ros_podo_connector::RosPODO_TrajFeedback feedback_;
+    ros_podo_connector::RosPODO_TrajResult result_;
+
+public:
+
+    RosPODO_TrajAction(std::string name) :
+        asTraj_(nh_traj, name, boost::bind(&RosPODO_TrajAction::executeCB, this, _1), false),
+        action_name_(name)
+    {
+        asTraj_.start();
+    }
+
+    ~RosPODO_TrajAction(void)
+    {
+
+    }
+
+    enum TRAJECTORY_CMD
+    {
+        MOVE_ABSOLUTE = 0,
+        MOVE_RELATIVE
+    };
+
+
+    void executeCB(const ros_podo_connector::RosPODO_TrajGoalConstPtr &goal)
+    {
+
+        //Debug: Input from Client
+        std::cout << "x: " << goal->x ;
+        std::cout << ", y: " << goal->y ;
+        std::cout << ", z: " << goal->z ;
+        std::cout << ", ori_w: " << goal->ori_w ;
+        std::cout << ", ori_x: " << goal->ori_x ;
+        std::cout << ", ori_y: " << goal->ori_y ;
+        std::cout << ", ori_z: " << goal->ori_z ;
+        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
+
+        /* MOVEIT INTERFACE*/
+        // Setup
+        // static const std::string PLANNING_GROUP = "L_arm";
+        static const std::string PLANNING_GROUP = goal->planGroup;
+        moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+
+        /// Raw pointers are frequently used to refer to the planning group for improved performance.
+        const robot_state::JointModelGroup* joint_model_group =
+            move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
+        /// Visualization
+        namespace rvt = rviz_visual_tools;
+        moveit_visual_tools::MoveItVisualTools visual_tools("base_footprint"); //STANDARD FRAME
+        visual_tools.deleteAllMarkers();
+        visual_tools.loadRemoteControl();
+
+        /// Text Visualization:
+        Eigen::Affine3d text_pose = Eigen::Affine3d::Identity();
+        text_pose.translation().z() = 1.5;
+//        visual_tools.publishText(text_pose, "MoveGroupInterface Demo", rvt::WHITE, rvt::XLARGE);
+        visual_tools.publishText(text_pose, "Attempting", rvt::WHITE, rvt::XLARGE);
+
+        // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
+
+        // Getting Basic Information
+        // We can print the name of the reference frame for this robot.
+        ROS_INFO_NAMED("tutorial", "Planning frame: %s", move_group.getPlanningFrame().c_str());
+        // We can also print the name of the end-effector link for this group.
+        ROS_INFO_NAMED("tutorial", "End effector link: %s", move_group.getEndEffectorLink().c_str());
+        // We can get a list of all the groups in the robot:
+        ROS_INFO_NAMED("tutorial", "Available Planning Groups:");
+
+        std::copy(move_group.getJointNames().begin(),move_group.getJointNames().end(),
+                  std::ostream_iterator<std::string>(std::cout, ", "));
+
+        // Planning to a Pose goal
+        geometry_msgs::Pose target_pose1;
+        switch(goal->traj_cmd)
+        {
+            case MOVE_ABSOLUTE:
+            {
+                std::cout << std::endl << "MOVE ABSOLUTE" << std::endl;
+                target_pose1.position.x = goal->x;
+                target_pose1.position.y = goal->y;
+                target_pose1.position.z = goal->z;
+                target_pose1.orientation.w = goal->ori_w;
+                target_pose1.orientation.x = goal->ori_x;
+                target_pose1.orientation.y = goal->ori_y;
+                target_pose1.orientation.z = goal->ori_z;
+                break;
+            }
+            case MOVE_RELATIVE:
+            {
+                std::cout << std::endl << "MOVE RELATIVE" << std::endl;
+                target_pose1.position.x = move_group.getCurrentPose().pose.position.x + goal->x;
+                target_pose1.position.y = move_group.getCurrentPose().pose.position.y + goal->y;
+                target_pose1.position.z = move_group.getCurrentPose().pose.position.z + goal->z;
+                target_pose1.orientation.w = move_group.getCurrentPose().pose.orientation.w + goal->ori_w;
+                target_pose1.orientation.x = move_group.getCurrentPose().pose.orientation.x + goal->ori_x;
+                target_pose1.orientation.y = move_group.getCurrentPose().pose.orientation.y + goal->ori_y;
+                target_pose1.orientation.z = move_group.getCurrentPose().pose.orientation.z + goal->ori_z;
+
+                break;
+            }
+        }
+
+        std::cout << "Move to x: " << target_pose1.position.x ;
+        std::cout << ", y: " << target_pose1.position.y ;
+        std::cout << ", z: " << target_pose1.position.z << std::endl;
+        std::cout << ", ori_w: " << target_pose1.orientation.w ;
+        std::cout << ", ori_x: " << target_pose1.orientation.x ;
+        std::cout << ", ori_y: " << target_pose1.orientation.y ;
+        std::cout << ", ori_z: " << target_pose1.orientation.z << std::endl;
+        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
+
+
+        move_group.setPoseTarget(target_pose1);
+        move_group.setPlannerId("RRT");
+
+        // Now, we call the planner to compute the plan and visualize it. // Note that we are just planning,
+        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+        moveit::planning_interface::MoveItErrorCode success = move_group.plan(my_plan);
+        ROS_INFO_NAMED("moveo", "Visualizing plan 1 (pose goal) %s", success == moveit_msgs::MoveItErrorCodes::SUCCESS ? "" : "FAILED");
+
+        // Visualizing plans
+        ROS_INFO_NAMED("tutorial", "Visualizing plan 1 as trajectory line");
+//        visual_tools.publishText(text_pose, "PLANNING", rvt::WHITE, rvt::XLARGE);
+        visual_tools.publishAxisLabeled(target_pose1, "Goal Pose");
+        visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group); //TRAJECTORY*******************************************************//
+
+        if(success)
+            move_group.move();
+
+        visual_tools.trigger();
+
+        //TEST
+        moveit_msgs::RobotTrajectory msg = my_plan.trajectory_;
+        std::vector<trajectory_msgs::MultiDOFJointTrajectoryPoint> trajectory_points;
+        std::vector<int>::size_type size1 = msg.joint_trajectory.points.size();
+
+        if(success)
+        {
+            visual_tools.publishText(text_pose, "PLAN SUCCESS", rvt::WHITE, rvt::XLARGE);
+            //Debug
+            std::cout << std::endl;
+            std::cout << "Trajectory points: " << msg.joint_trajectory.points.size() << std::endl;
+            std::cout << "Num of joints in planning group: " << msg.joint_trajectory.joint_names.size() << std::endl;
+
+            //WRITE TO PODO
+            //Port 5500; Send MODE CMD
+            TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
+            write(sock, &TXData, TXDataSize);
+
+            //WRITE TO PODO; Send TRAJECTORY
+            //if(CreateSocket_new(PODO_ADDR, PODO_TRAJ_PORT)==false)
+            //    printf("Socket new make fail\n");
+            //else
+            //    printf("Socket new make success\n");
+
+            TRAJECTORY_ACTION Traj_action[msg.joint_trajectory.points.size()];
+
+            for(int p=0; p<size1; p++){    //p: points of Trajectory
+                for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
+                {
+                    for(int traj_j=0; traj_j< msg.joint_trajectory.joint_names.size(); traj_j++)     // traj_j: trajectory joints
+                    {
+                        //std::cout << traj_j << " Joint name: " << JointBufferNameList[robot_j] << " vs " << msg.joint_trajectory.joint_names[traj_j] << std::endl;
+                        //only if joint name matches
+                        if(JointBufferNameList[robot_j] == msg.joint_trajectory.joint_names[traj_j])
+                        {
+                            Traj_action[p].joint[robot_j].ONOFF_control = CONTROL_ON;
+                            Traj_action[p].joint[robot_j].reference = msg.joint_trajectory.points[p].positions[traj_j];
+                            if(p > 0)
+                                Traj_action[p].joint[robot_j].GoalmsTime = (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000;
+                            else
+                                Traj_action[p].joint[robot_j].GoalmsTime = 0.0;
+                            break;
+                        }
+                        else {
+                            Traj_action[p].joint[robot_j].ONOFF_control = CONTROL_OFF;
+                            Traj_action[p].joint[robot_j].reference = 0.0;
+                            Traj_action[p].joint[robot_j].GoalmsTime = 0.0;
+                        }
+                    }
+                }
+                //DEBUGGING
+                std::cout << std::endl << "Point " << p << ": " << std::endl;
+                for (int i =0; i < NUM_JOINTS; i++)
+                    std::cout << "Joint " << JointBufferNameList[i]<< ": Reference= " << Traj_action[p].joint[i].reference << ", control= " << Traj_action[p].joint[i].ONOFF_control << ", time= "<< Traj_action[p].joint[i].GoalmsTime << std::endl;
+
+
+            }
+            //WRITE TRAJECTORY TO PODO
+            //write(sock_traj, &Traj_action, sizeof(Traj_action));
+
+
+            /*FILE *testFile = NULL;
+            testFile = fopen("/home/rainbow/catkin_ws/src/ros_podo_connector/ros_podo_connector/src/trajectory.txt","a");
+            if((testFile == NULL))
+                std::cout << "Failed to open trajectory.txt" << std::endl;
+            else{
+                for(int p=0; p<size1; p++)
+                {
+                    if(p == 0)
+                        fprintf(testFile,"%i, 0 ,",p);
+                    else
+                        fprintf(testFile,"%i, %d ,",p, (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000);
+                    for(int i=0; i<NUM_JOINTS; i++){
+                        fprintf(testFile,"%d, ", Traj_action[p].joint[i].reference);
+                    }
+                    fprintf(testFile,"\n");
+                }
+            }
+            fclose(testFile);*/
+        }
+        else {
+            visual_tools.publishText(text_pose, "PLAN failed", rvt::WHITE, rvt::XLARGE);
+        }
+
+
+
+
+        //terminal status
+
+        asTraj_.setSucceeded(result_);
+
+    }
+
+
+};
+/*========================== End of Traj Action Server ==================================*/
+
 
 
 /*Print helpful summary about this code */
@@ -697,7 +964,7 @@ void printInitialInfo()
     std::cout << "   Developer: Heo Yujin" << std::endl;
     std::cout << "   Developer: Cho Saihim" << std::endl;
     std::cout << "   E-mail   : blike4@kaist.ac.kr" << std::endl;
-    std::cout << "   E-mail   : chosaihim@kaist.ac.kr" << std::endl;
+    std::cout << "   E-mail   : saihimcho@kaist.ac.kr" << std::endl;
     std::cout << "===================================\033[0m" << std::endl;
 }
 
@@ -758,6 +1025,23 @@ int CreateSocket(const char *addr, int port){
     return true;
 }
 
+int CreateSocket_new(const char *addr, int port){
+    sock_traj = socket(AF_INET, SOCK_STREAM, 0);
+    if(sock_traj == -1){
+        return false;
+    }
+    server_traj.sin_addr.s_addr = inet_addr(addr);
+    server_traj.sin_family = AF_INET;
+    server_traj.sin_port = htons(port);
+
+    //printf("CreateSocket_new\n");
+    int optval = 1;
+    setsockopt(sock_traj, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    setsockopt(sock_traj, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+
+    return true;
+}
+
 int Connect2Server()
 {
     if(connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0)
@@ -769,12 +1053,25 @@ int Connect2Server()
     return true;
 }
 
+int Connect2ServerTraj()
+{
+    if(connect(sock_traj, (struct sockaddr*)&server_traj, sizeof(server_traj)) < 0)
+    {
+        std::cout << " Connection Failed TARJ" << std::endl;
+        return false;
+    }
+    std::cout << "Client connect to server_traj!! (PODO_CONNECTOR_TRAJ)" << std::endl;
+    return true;
+}
+
 void LANthread_update()
 {
 
     static unsigned int tcp_status = 0x00;
+    static unsigned int tcp_statustraj = 0x00;
     static int tcp_size = 0;
     static int connectCnt = 0;
+    static int connectCntTraj = 0;
 
     if(threadWorking){
         usleep(100);
@@ -809,7 +1106,23 @@ void LANthread_update()
                 std::cout << "Socket Disconnected.." << std::endl;
             }
         }
+//        if(tcp_statustraj == 0x00){
+//            // If client was not connected
+//            if(sock_traj == 0){
+//                CreateSocket_new(ip, PODO_TRAJ_PORT);
+//            }
+//            if(Connect2ServerTraj()){
+//                tcp_statustraj = 0x01;
+//                connectCntTraj = 0;
+//            }else{
+//                if(connectCntTraj%10 == 0)
+//                    std::cout << "Connect to Server Failed Traj.." << std::endl;
+//                    connectCntTraj++;
+//            }
+//            //usleep(1000*1000);
+//        }
     }
+
 }
 
 /*========================== End of LAN functions ==================================*/
@@ -834,13 +1147,16 @@ int main(int argc, char **argv)
     RosPODO_BaseAction rospodo_base("rospodo_base");
     RosPODO_ArmAction rospodo_arm("rospodo_arm");
     RosPODO_GripperAction rospodo_gripper("rospodo_gripper");
+    //ADD
+    RosPODO_TrajAction rospodo_Traj("rospodo_traj");
     ROS_INFO("Starting ROS2PODO Action Servers");
 
     
-   
+
     /* === main while loop to RX feedback calls at regular periods === */
     while(ros::ok())
     {
+
         //update RX values from PODO
         LANthread_update();
 
@@ -867,6 +1183,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
         loop_rate.sleep();
     }
+
     return 0;
 }
 /*========================== End of Code ==================================*/

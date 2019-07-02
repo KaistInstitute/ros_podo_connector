@@ -727,6 +727,8 @@ protected:
     ros_podo_connector::RosPODO_TrajFeedback feedback_;
     ros_podo_connector::RosPODO_TrajResult result_;
 
+    int max_path = 100;
+
 public:
 
     RosPODO_TrajAction(std::string name) :
@@ -851,8 +853,8 @@ public:
         visual_tools.publishAxisLabeled(target_pose1, "Goal Pose");
         visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group); //TRAJECTORY*******************************************************//
 
-        if(success)
-            move_group.move();
+//        if(success)
+//            move_group.move();
 
         visual_tools.trigger();
 
@@ -861,8 +863,11 @@ public:
         std::vector<trajectory_msgs::MultiDOFJointTrajectoryPoint> trajectory_points;
         std::vector<int>::size_type size1 = msg.joint_trajectory.points.size();
 
-        if(success)
+        if(success && size1 < max_path)
         {
+
+            move_group.move();
+
             visual_tools.publishText(text_pose, "PLAN SUCCESS", rvt::WHITE, rvt::XLARGE);
             //Debug
             std::cout << std::endl;
@@ -876,7 +881,6 @@ public:
                 {
                     for(int traj_j=0; traj_j< msg.joint_trajectory.joint_names.size(); traj_j++)     // traj_j: trajectory joints
                     {
-                        //std::cout << traj_j << " Joint name: " << JointBufferNameList[robot_j] << " vs " << msg.joint_trajectory.joint_names[traj_j] << std::endl;
                         //only if joint name matches
                         if(JointBufferNameList[robot_j] == msg.joint_trajectory.joint_names[traj_j])
                         {
@@ -895,12 +899,11 @@ public:
                         }
                     }
                 }
+
                 //DEBUGGING
                 std::cout << std::endl << "Point " << p << ": " << std::endl;
                 for (int i =0; i < NUM_JOINTS; i++)
                     std::cout << "Joint " << JointBufferNameList[i]<< ": Reference= " << Traj_action[p].joint[i].reference << ", control= " << Traj_action[p].joint[i].ONOFF_control << ", time= "<< Traj_action[p].joint[i].GoalmsTime << std::endl;
-
-
             }
             //WRITE TRAJECTORY TO PODO
             //write(sock_traj, &Traj_action, sizeof(Traj_action));
@@ -931,17 +934,19 @@ public:
                 }
             }
             fclose(testFile);*/
+
+            asTraj_.setSucceeded(result_);
         }
         else {
             visual_tools.publishText(text_pose, "PLAN failed", rvt::WHITE, rvt::XLARGE);
+
+            if(size1 > max_path)
+                std::cout << "Path size bigger than maximum size" << std::endl;
+
+             //terminal status
+            asTraj_.setAborted(result_);
         }
 
-
-
-
-        //terminal status
-
-        asTraj_.setSucceeded(result_);
 
     }
 

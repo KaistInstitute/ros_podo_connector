@@ -20,60 +20,53 @@ int main (int argc, char **argv)
 {
     ros::init(argc, argv, "traj_request_client");
 
+
+    ros::NodeHandle nh("~");
+
+    //Set variables and initial values
+    std::string move_mode = "RELATIVE", plan_group = "L_arm";
+    double x_goal = 0., y_goal=0., z_goal=0., w_goal=0., wx_goal = 0., wy_goal = 0.,  wz_goal = 0.;
+
+    std::cout << "CHECK BUFFER VALUES" << std::endl;
+    std::cout << "x, y, z = " << x_goal << y_goal << z_goal << std::endl;
+    nh.getParam("mode", move_mode); nh.getParam("plangroup", plan_group);
+    nh.getParam("x", x_goal); nh.getParam("y", y_goal); nh.getParam("z", z_goal);
+    nh.getParam("w", w_goal); nh.getParam("wx", wx_goal); nh.getParam("wy", wy_goal); nh.getParam("wz", wz_goal);
+
+    ROS_INFO("Mode: %s", move_mode.c_str());
+    ROS_INFO("PLAN Group: %s", plan_group.c_str());
+    ROS_INFO("x, y, z, w, wx, wy, wz: %lf, %lf, %lf, %lf, %lf, %lf, %lf", x_goal, y_goal, z_goal, w_goal, wx_goal, wy_goal, wz_goal);
+
+
     // create the action client
     // true causes the client to spin its own thread
-//    actionlib::SimpleActionClient<ros_podo_connector::RosPODO_BaseAction> ac_base("rospodo_base", true);
-//    actionlib::SimpleActionClient<ros_podo_connector::RosPODO_ArmAction> ac_arm("rospodo_arm", true);
-//    actionlib::SimpleActionClient<ros_podo_connector::RosPODO_GripperAction> ac_gripper("rospodo_gripper", true);
     actionlib::SimpleActionClient<ros_podo_connector::RosPODO_TrajAction> ac_traj("rospodo_traj", true);
 
     ROS_INFO("Waiting for action server to start.");
     // wait for the action server to start
-    //  ac_base.waitForServer(); //will wait for infinite time
-    //  ac_arm.waitForServer(); //will wait for infinite time
-    //  ac_gripper.waitForServer(); //will wait for infinite time
     ac_traj.waitForServer(); //will wait for infinite time
 
     ROS_INFO("Action server started, sending goal.");
-
     // send a goal to the action
-//    ros_podo_connector::RosPODO_BaseGoal      goal_base;
-//    ros_podo_connector::RosPODO_BaseGoal      goal_base_return;
-//    ros_podo_connector::RosPODO_ArmGoal       goal_arm;
-//    ros_podo_connector::RosPODO_GripperGoal   goal_gripper;
-
     ros_podo_connector::RosPODO_TrajGoal      goal_traj;
 
+    /* ============== Move Endeffector-==============  */
 
-    /* ============== Move Endeffector to ABSOLUTE COORDINATES  ==============  */
-//    goal_traj.traj_cmd = MOVE_ABSOLUTE;
-//    goal_traj.x = 0.5;
-//    goal_traj.y = 0.5;
-//    goal_traj.z = 0.8;
-//    goal_traj.ThetaDeg = 1.0;
+    if(move_mode == "ABSOLUTE")
+        goal_traj.traj_cmd = MOVE_ABSOLUTE;
+    else if (move_mode == "RELATIVE")
+        goal_traj.traj_cmd = MOVE_RELATIVE;
+    else
+        goal_traj.traj_cmd = MOVE_RELATIVE;
 
-//    ac_traj.sendGoal(goal_traj);
-//    ros::Duration(6).sleep();
-
-//    //Debug
-//    std::cout << "Sent Goal: " << std::endl;
-//    std::cout << "x: " << goal_traj.x << std::endl;
-//    std::cout << "y: " << goal_traj.y << std::endl;
-//    std::cout << "z: " << goal_traj.z << std::endl;
-//    std::cout << "theta: " << goal_traj.ThetaDeg << std::endl;
-//    std::cout << "mode: " << goal_traj.traj_cmd << std::endl;
-
-    /* ============== Move Endeffector  ==============  */
-    goal_traj.traj_cmd = MOVE_RELATIVE;
-
-    goal_traj.x = 0.1; //0.1;
-    goal_traj.y = 0.2;
-    goal_traj.z = 0.2; //0.0;
-    goal_traj.ori_w = 0.0;
-    goal_traj.ori_x = 0.0;
-    goal_traj.ori_y = 0.0;
-    goal_traj.ori_z = 0.0;
-    goal_traj.planGroup = "L_arm";
+    goal_traj.x = x_goal; //0.1;
+    goal_traj.y = y_goal; //0.0;
+    goal_traj.z = z_goal; //0.0;
+    goal_traj.ori_w = w_goal; //0.0;
+    goal_traj.ori_x = wx_goal; //0.0;
+    goal_traj.ori_y = wy_goal; //0.0;
+    goal_traj.ori_z = wz_goal; //0.0;
+    goal_traj.planGroup = plan_group; //"L_arm";
 
     ac_traj.sendGoal(goal_traj);
     ros::Duration(6).sleep();
@@ -88,6 +81,7 @@ int main (int argc, char **argv)
     std::cout << "ori_y: " << goal_traj.ori_y << std::endl;
     std::cout << "ori_z: " << goal_traj.ori_z << std::endl;
     std::cout << "mode: " << goal_traj.traj_cmd << std::endl;
+    std::cout << "PlangGroup: " << goal_traj.planGroup.c_str() << std::endl;
 
 
 
@@ -103,5 +97,9 @@ int main (int argc, char **argv)
         ROS_INFO("Action did not finish before the time out.");
 
     //exit
+    nh.deleteParam("mode"); nh.deleteParam("plangroup");
+    nh.deleteParam("x"); nh.deleteParam("y"); nh.deleteParam("z");
+    nh.deleteParam("w"); nh.deleteParam("wx"); nh.deleteParam("wy"); nh.deleteParam("wz");
+
     return 0;
 }

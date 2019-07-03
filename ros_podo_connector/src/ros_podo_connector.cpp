@@ -95,6 +95,7 @@ LAN_ROS2PODO    TXData;
 int     RXDataSize;
 int     TXDataSize;
 void*   RXBuffer;
+void*   RXxBuffer;
 void*   TXBuffer;
 bool    IsdataRead = false;
 
@@ -761,14 +762,13 @@ public:
         std::cout << ", ori_x: " << goal->ori_x ;
         std::cout << ", ori_y: " << goal->ori_y ;
         std::cout << ", ori_z: " << goal->ori_z ;
-        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
+        std::cout << ", PLANNING GROUP: " << goal->planGroup << std::endl;
 
         /* MOVEIT INTERFACE*/
         // Setup
         // static const std::string PLANNING_GROUP = "L_arm";
         static const std::string PLANNING_GROUP = goal->planGroup;
         moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-
         /// Raw pointers are frequently used to refer to the planning group for improved performance.
         const robot_state::JointModelGroup* joint_model_group =
             move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
@@ -782,7 +782,6 @@ public:
         /// Text Visualization:
         Eigen::Affine3d text_pose = Eigen::Affine3d::Identity();
         text_pose.translation().z() = 1.5;
-//        visual_tools.publishText(text_pose, "MoveGroupInterface Demo", rvt::WHITE, rvt::XLARGE);
         visual_tools.publishText(text_pose, "Attempting", rvt::WHITE, rvt::XLARGE);
 
         // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
@@ -849,12 +848,8 @@ public:
 
         // Visualizing plans
         ROS_INFO_NAMED("tutorial", "Visualizing plan 1 as trajectory line");
-//        visual_tools.publishText(text_pose, "PLANNING", rvt::WHITE, rvt::XLARGE);
         visual_tools.publishAxisLabeled(target_pose1, "Goal Pose");
         visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group); //TRAJECTORY*******************************************************//
-
-//        if(success)
-//            move_group.move();
 
         visual_tools.trigger();
 
@@ -867,8 +862,6 @@ public:
         {
 
             move_group.move();
-
-            visual_tools.publishText(text_pose, "PLAN SUCCESS", rvt::WHITE, rvt::XLARGE);
             //Debug
             std::cout << std::endl;
             std::cout << "Trajectory points: " << msg.joint_trajectory.points.size() << std::endl;
@@ -887,7 +880,7 @@ public:
                             Traj_action[p].joint[robot_j].ONOFF_control = CONTROL_ON;
                             Traj_action[p].joint[robot_j].reference = msg.joint_trajectory.points[p].positions[traj_j];
                             if(p > 0)
-                                Traj_action[p].joint[robot_j].GoalmsTime = (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000;
+                                Traj_action[p].joint[robot_j].GoalmsTime = (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec());
                             else
                                 Traj_action[p].joint[robot_j].GoalmsTime = 0.;
                             break;
@@ -901,12 +894,12 @@ public:
                 }
 
                 //DEBUGGING
-                std::cout << std::endl << "Point " << p << ": " << std::endl;
-                for (int i =0; i < NUM_JOINTS; i++)
-                    std::cout << "Joint " << JointBufferNameList[i]<< ": Reference= " << Traj_action[p].joint[i].reference << ", control= " << Traj_action[p].joint[i].ONOFF_control << ", time= "<< Traj_action[p].joint[i].GoalmsTime << std::endl;
+//                std::cout << std::endl << "Point " << p << ": " << std::endl;
+//                for (int i =0; i < NUM_JOINTS; i++)
+//                    std::cout << "Joint " << JointBufferNameList[i]<< ": Reference= " << Traj_action[p].joint[i].reference << ", control= " << Traj_action[p].joint[i].ONOFF_control << ", time= "<< Traj_action[p].joint[i].GoalmsTime << std::endl;
             }
             //WRITE TRAJECTORY TO PODO
-            //write(sock_traj, &Traj_action, sizeof(Traj_action));
+            write(sock_traj, &Traj_action, sizeof(Traj_action));
 
             //WRITE TO PODO
             //Port 5500; Send MODE CMD
@@ -926,9 +919,9 @@ public:
                     if(p == 0)
                         fprintf(testFile,"%i, 0 ,",p);
                     else
-                        fprintf(testFile,"%i, %d ,",p, (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000);
+                        fprintf(testFile,"%i, %ld ,",p, (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000);
                     for(int i=0; i<NUM_JOINTS; i++){
-                        fprintf(testFile,"%d, ", Traj_action[p].joint[i].reference);
+                        fprintf(testFile,"%ld, ", Traj_action[p].joint[i].reference);
                     }
                     fprintf(testFile,"\n");
                 }
@@ -991,6 +984,7 @@ int initializeSocket()
         RXDataSize = sizeof(LAN_PODO2ROS);
         TXDataSize = sizeof(LAN_ROS2PODO);
         RXBuffer = (void*)malloc(RXDataSize);
+        RXxBuffer = (void*)malloc(sizeof(int));
         TXBuffer = (void*)malloc(TXDataSize);
         
         /*
@@ -1034,7 +1028,7 @@ int CreateSocket_new(const char *addr, int port){
     server_traj.sin_family = AF_INET;
     server_traj.sin_port = htons(port);
 
-    //printf("CreateSocket_new\n");
+    printf("CreateSocket_new\n");
     int optval = 1;
     setsockopt(sock_traj, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     setsockopt(sock_traj, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
@@ -1070,6 +1064,7 @@ void LANthread_update()
     static unsigned int tcp_status = 0x00;
     static unsigned int tcp_statustraj = 0x00;
     static int tcp_size = 0;
+    static int tcp_size_traj = 0;
     static int connectCnt = 0;
     static int connectCntTraj = 0;
 
@@ -1106,25 +1101,34 @@ void LANthread_update()
                 std::cout << "Socket Disconnected.." << std::endl;
             }
         }
-//        if(tcp_statustraj == 0x00){
-//            // If client was not connected
-//            if(sock_traj == 0){
-//                CreateSocket_new(ip, PODO_TRAJ_PORT);
-//            }
-//            if(Connect2ServerTraj()){
-//                tcp_statustraj = 0x01;
-//                connectCntTraj = 0;
-//            }else{
-//                if(connectCntTraj%10 == 0)
+        if(tcp_statustraj == 0x00){
+            // If client was not connected
+            if(sock_traj == 0){
+                CreateSocket_new(ip, PODO_TRAJ_PORT);
+            }
+            if(Connect2ServerTraj()){
+                tcp_statustraj = 0x01;
+                connectCntTraj = 0;
+            }else{
+                if(connectCntTraj%10 == 0)
 //                    std::cout << "Connect to Server Failed Traj.." << std::endl;
-//                    connectCntTraj++;
-//            }
-//            //usleep(1000*1000);
-//        }
+                    connectCntTraj++;
+            }
+            //usleep(1000*1000);
+        }
+        if(tcp_statustraj == 0x01){
+            // If client was connected
+            tcp_size_traj = read(sock_traj, RXxBuffer, sizeof(int));
+            if(tcp_size_traj == 0){
+                tcp_statustraj = 0x00;
+                close(sock_traj);
+                sock_traj = 0;
+                std::cout << "Socket Disconnected Traj.." << std::endl;
+            }
+        }
     }
 
 }
-
 /*========================== End of LAN functions ==================================*/
 
 

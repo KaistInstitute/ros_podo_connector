@@ -27,61 +27,55 @@ int main (int argc, char **argv)
     std::string move_mode = "RELATIVE", plan_group = "L_arm";
     double x_goal = 0., y_goal=0., z_goal=0., w_goal=0., wx_goal = 0., wy_goal = 0.,  wz_goal = 0.;
 
-    std::cout << "CHECK BUFFER VALUES" << std::endl;
-    std::cout << "x, y, z = " << x_goal << y_goal << z_goal << std::endl;
     nh.getParam("mode", move_mode); nh.getParam("plangroup", plan_group);
     nh.getParam("x", x_goal); nh.getParam("y", y_goal); nh.getParam("z", z_goal);
     nh.getParam("w", w_goal); nh.getParam("wx", wx_goal); nh.getParam("wy", wy_goal); nh.getParam("wz", wz_goal);
 
     ROS_INFO("Mode: %s", move_mode.c_str());
     ROS_INFO("PLAN Group: %s", plan_group.c_str());
-    ROS_INFO("x, y, z, w, wx, wy, wz: %lf, %lf, %lf, %lf, %lf, %lf, %lf", x_goal, y_goal, z_goal, w_goal, wx_goal, wy_goal, wz_goal);
+    ROS_INFO("x, y, z: %lf, %lf, %lf", x_goal, y_goal, z_goal);
+    ROS_INFO("w, wx, wy, wz: %lf, %lf, %lf, %lf", w_goal, wx_goal, wy_goal, wz_goal);
 
 
     // create the action client
     // true causes the client to spin its own thread
     actionlib::SimpleActionClient<ros_podo_connector::RosPODO_TrajAction> ac_traj("rospodo_traj", true);
 
-    ROS_INFO("Waiting for action server to start.");
     // wait for the action server to start
+    ROS_INFO("Waiting for action server to start.");
     ac_traj.waitForServer(); //will wait for infinite time
 
-    ROS_INFO("Action server started, sending goal.");
     // send a goal to the action
+    ROS_INFO("Action server started, sending goal.");
     ros_podo_connector::RosPODO_TrajGoal      goal_traj;
 
     /* ============== Move Endeffector-==============  */
 
+    //Set a goal
     if(move_mode == "ABSOLUTE")
         goal_traj.traj_cmd = MOVE_ABSOLUTE;
-    else if (move_mode == "RELATIVE")
-        goal_traj.traj_cmd = MOVE_RELATIVE;
     else
         goal_traj.traj_cmd = MOVE_RELATIVE;
 
-    goal_traj.x = x_goal; //0.1;
-    goal_traj.y = y_goal; //0.0;
-    goal_traj.z = z_goal; //0.0;
-    goal_traj.ori_w = w_goal; //0.0;
-    goal_traj.ori_x = wx_goal; //0.0;
-    goal_traj.ori_y = wy_goal; //0.0;
-    goal_traj.ori_z = wz_goal; //0.0;
+    goal_traj.x = x_goal; //0.;
+    goal_traj.y = y_goal; //0.;
+    goal_traj.z = z_goal; //0.;
+    goal_traj.ori_w = w_goal; //0.;
+    goal_traj.ori_x = wx_goal; //0.;
+    goal_traj.ori_y = wy_goal; //0.;
+    goal_traj.ori_z = wz_goal; //0.;
     goal_traj.planGroup = plan_group; //"L_arm";
 
     ac_traj.sendGoal(goal_traj);
     ros::Duration(6).sleep();
 
-    //Debug
-    std::cout << "Sent Goal: " << std::endl;
-    std::cout << "x: " << goal_traj.x << std::endl;
-    std::cout << "y: " << goal_traj.y << std::endl;
-    std::cout << "z: " << goal_traj.z << std::endl;
-    std::cout << "ori_w: " << goal_traj.ori_w << std::endl;
-    std::cout << "ori_x: " << goal_traj.ori_x << std::endl;
-    std::cout << "ori_y: " << goal_traj.ori_y << std::endl;
-    std::cout << "ori_z: " << goal_traj.ori_z << std::endl;
-    std::cout << "mode: " << goal_traj.traj_cmd << std::endl;
-    std::cout << "PlangGroup: " << goal_traj.planGroup.c_str() << std::endl;
+    //Debug: PRINT
+//    std::cout << "Sent Goal: " << std::endl;
+//    if(goal_traj.traj_cmd == MOVE_ABSOLUTE) std::cout << "Mode: MOVE ABSOLUTE " << std::endl;
+//    else std::cout << " - Mode: MOVE RELATIVE " << std::endl;
+//    std::cout << " - Plan Group: " << goal_traj.planGroup.c_str() << std::endl;
+//    std::cout << " - (x, y, z): (" << goal_traj.x << ", " << goal_traj.y << ", " << goal_traj.z << ")"<< std::endl;
+//    std::cout << " - (ori_w, x, y, z): (" << goal_traj.ori_w << ", " << goal_traj.ori_x << ", " << goal_traj.ori_y << ", " << goal_traj.ori_z << ")" << std::endl;
 
 
 

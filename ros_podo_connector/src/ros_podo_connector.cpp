@@ -755,6 +755,7 @@ public:
     {
 
         //Debug: Input from Client
+        std::cout << std::endl << "Client's Request: " << std::endl;
         std::cout << "x: " << goal->x ;
         std::cout << ", y: " << goal->y ;
         std::cout << ", z: " << goal->z ;
@@ -767,13 +768,14 @@ public:
         /* MOVEIT INTERFACE*/
         // Setup
         // static const std::string PLANNING_GROUP = "L_arm";
-        static const std::string PLANNING_GROUP = goal->planGroup;
+        const std::string PLANNING_GROUP = goal->planGroup;
         moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-        /// Raw pointers are frequently used to refer to the planning group for improved performance.
+
+        // Raw pointers are frequently used to refer to the planning group for improved performance.
         const robot_state::JointModelGroup* joint_model_group =
             move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
-        /// Visualization
+        // Visualization
         namespace rvt = rviz_visual_tools;
         moveit_visual_tools::MoveItVisualTools visual_tools("base_footprint"); //STANDARD FRAME
         visual_tools.deleteAllMarkers();
@@ -803,7 +805,7 @@ public:
         {
             case MOVE_ABSOLUTE:
             {
-                std::cout << std::endl << "MOVE ABSOLUTE" << std::endl;
+                std::cout << std::endl << "Mode: MOVE ABSOLUTE" << std::endl;
                 target_pose1.position.x = goal->x;
                 target_pose1.position.y = goal->y;
                 target_pose1.position.z = goal->z;
@@ -815,7 +817,7 @@ public:
             }
             case MOVE_RELATIVE:
             {
-                std::cout << std::endl << "MOVE RELATIVE" << std::endl;
+                std::cout << std::endl << "Mode: MOVE RELATIVE" << std::endl;
                 target_pose1.position.x = move_group.getCurrentPose().pose.position.x + goal->x;
                 target_pose1.position.y = move_group.getCurrentPose().pose.position.y + goal->y;
                 target_pose1.position.z = move_group.getCurrentPose().pose.position.z + goal->z;
@@ -828,15 +830,14 @@ public:
             }
         }
 
-        std::cout << "Move to x: " << target_pose1.position.x ;
+        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
+        std::cout << "Goal Position x: " << target_pose1.position.x ;
         std::cout << ", y: " << target_pose1.position.y ;
         std::cout << ", z: " << target_pose1.position.z << std::endl;
-        std::cout << ", ori_w: " << target_pose1.orientation.w ;
+        std::cout << "Goal orientation ori_w: " << target_pose1.orientation.w ;
         std::cout << ", ori_x: " << target_pose1.orientation.x ;
         std::cout << ", ori_y: " << target_pose1.orientation.y ;
         std::cout << ", ori_z: " << target_pose1.orientation.z << std::endl;
-        std::cout << "PLANNING GROUP: " << goal->planGroup << std::endl;
-
 
         move_group.setPoseTarget(target_pose1);
         move_group.setPlannerId("RRT");
@@ -853,7 +854,7 @@ public:
 
         visual_tools.trigger();
 
-        //TEST
+        //Trajectory Planning
         moveit_msgs::RobotTrajectory msg = my_plan.trajectory_;
         std::vector<trajectory_msgs::MultiDOFJointTrajectoryPoint> trajectory_points;
         std::vector<int>::size_type size1 = msg.joint_trajectory.points.size();
@@ -892,42 +893,19 @@ public:
                         }
                     }
                 }
-
                 //DEBUGGING
 //                std::cout << std::endl << "Point " << p << ": " << std::endl;
 //                for (int i =0; i < NUM_JOINTS; i++)
 //                    std::cout << "Joint " << JointBufferNameList[i]<< ": Reference= " << Traj_action[p].joint[i].reference << ", control= " << Traj_action[p].joint[i].ONOFF_control << ", time= "<< Traj_action[p].joint[i].GoalmsTime << std::endl;
             }
-            //WRITE TRAJECTORY TO PODO
+            //WRITE TRAJECTORY TO PODO (Port 7000)
             write(sock_traj, &Traj_action, sizeof(Traj_action));
 
-            //WRITE TO PODO
-            //Port 5500; Send MODE CMD
+            //WRITE TO PODO (Port 5500; Send MODE CMD)
             TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
-            printf("Size of ros2podo_data = %d\n",sizeof(TXData.ros2podo_data));
-            printf("Size of TX.ros2podo_data = %d\n",sizeof(TXData));
             write(sock, &TXData, TXDataSize);
-
-
-            /*FILE *testFile = NULL;
-            testFile = fopen("/home/rainbow/catkin_ws/src/ros_podo_connector/ros_podo_connector/src/trajectory.txt","a");
-            if((testFile == NULL))
-                std::cout << "Failed to open trajectory.txt" << std::endl;
-            else{
-                for(int p=0; p<size1; p++)
-                {
-                    if(p == 0)
-                        fprintf(testFile,"%i, 0 ,",p);
-                    else
-                        fprintf(testFile,"%i, %ld ,",p, (msg.joint_trajectory.points[p].time_from_start.toSec() - msg.joint_trajectory.points[p-1].time_from_start.toSec())*1000);
-                    for(int i=0; i<NUM_JOINTS; i++){
-                        fprintf(testFile,"%ld, ", Traj_action[p].joint[i].reference);
-                    }
-                    fprintf(testFile,"\n");
-                }
-            }
-            fclose(testFile);*/
-
+//            printf("Size of ros2podo_data %lu%d\n",sizeof(TXData.ros2podo_data));
+//            printf("Size of TX.ros2podo_data = %d\n",sizeof(TXData));
             asTraj_.setSucceeded(result_);
         }
         else {
@@ -935,15 +913,13 @@ public:
 
             if(size1 > max_path)
                 std::cout << "Path size bigger than maximum size" << std::endl;
+            else
+                std::cout << "Plan Failed" << std::endl;
 
              //terminal status
             asTraj_.setAborted(result_);
         }
-
-
     }
-
-
 };
 /*========================== End of Traj Action Server ==================================*/
 

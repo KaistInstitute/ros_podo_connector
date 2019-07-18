@@ -31,12 +31,6 @@ int main (int argc, char **argv)
     nh.getParam("x", x_goal); nh.getParam("y", y_goal); nh.getParam("z", z_goal);
     nh.getParam("w", w_goal); nh.getParam("wx", wx_goal); nh.getParam("wy", wy_goal); nh.getParam("wz", wz_goal);
 
-    ROS_INFO("Mode: %s", move_mode.c_str());
-    ROS_INFO("PLAN Group: %s", plan_group.c_str());
-    ROS_INFO("x, y, z: %lf, %lf, %lf", x_goal, y_goal, z_goal);
-    ROS_INFO("w, wx, wy, wz: %lf, %lf, %lf, %lf", w_goal, wx_goal, wy_goal, wz_goal);
-
-
     // create the action client
     // true causes the client to spin its own thread
     actionlib::SimpleActionClient<ros_podo_connector::RosPODO_TrajAction> ac_traj("rospodo_traj", true);
@@ -52,32 +46,26 @@ int main (int argc, char **argv)
     /* ============== Move Endeffector-==============  */
 
     //Set a goal
-    if(move_mode == "ABSOLUTE")
-        goal_traj.traj_cmd = MOVE_ABSOLUTE;
-    else
-        goal_traj.traj_cmd = MOVE_RELATIVE;
+    if(move_mode == "ABSOLUTE") goal_traj.traj_cmd = MOVE_ABSOLUTE;
+    else goal_traj.traj_cmd = MOVE_RELATIVE;
 
-    goal_traj.x = x_goal; //0.;
-    goal_traj.y = y_goal; //0.;
-    goal_traj.z = z_goal; //0.;
-    goal_traj.ori_w = w_goal; //0.;
-    goal_traj.ori_x = wx_goal; //0.;
-    goal_traj.ori_y = wy_goal; //0.;
-    goal_traj.ori_z = wz_goal; //0.;
-    goal_traj.planGroup = plan_group; //"L_arm";
+    goal_traj.x = x_goal;               //0.;
+    goal_traj.y = y_goal;               //0.;
+    goal_traj.z = z_goal;               //0.;
+    goal_traj.ori_w = w_goal;           //0.;
+    goal_traj.ori_x = wx_goal;          //0.;
+    goal_traj.ori_y = wy_goal;          //0.;
+    goal_traj.ori_z = wz_goal;          //0.;
+    goal_traj.planGroup = plan_group;   //"L_arm";
+
+    //Print Goal on the terminal
+    ROS_INFO("Mode: %s", move_mode.c_str());
+    ROS_INFO("PLAN Group: %s", plan_group.c_str());
+    ROS_INFO("x, y, z: %lf, %lf, %lf", x_goal, y_goal, z_goal);
+    ROS_INFO("w, wx, wy, wz: %lf, %lf, %lf, %lf", w_goal, wx_goal, wy_goal, wz_goal);
 
     ac_traj.sendGoal(goal_traj);
     ros::Duration(6).sleep();
-
-    //Debug: PRINT
-//    std::cout << "Sent Goal: " << std::endl;
-//    if(goal_traj.traj_cmd == MOVE_ABSOLUTE) std::cout << "Mode: MOVE ABSOLUTE " << std::endl;
-//    else std::cout << " - Mode: MOVE RELATIVE " << std::endl;
-//    std::cout << " - Plan Group: " << goal_traj.planGroup.c_str() << std::endl;
-//    std::cout << " - (x, y, z): (" << goal_traj.x << ", " << goal_traj.y << ", " << goal_traj.z << ")"<< std::endl;
-//    std::cout << " - (ori_w, x, y, z): (" << goal_traj.ori_w << ", " << goal_traj.ori_x << ", " << goal_traj.ori_y << ", " << goal_traj.ori_z << ")" << std::endl;
-
-
 
     //wait for the action to return
     bool finished_before_timeout = ac_traj.waitForResult(ros::Duration(100.0));
@@ -89,6 +77,7 @@ int main (int argc, char **argv)
     }
     else
         ROS_INFO("Action did not finish before the time out.");
+
 
     //exit
     nh.deleteParam("mode"); nh.deleteParam("plangroup");

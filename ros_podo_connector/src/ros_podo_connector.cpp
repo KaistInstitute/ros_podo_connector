@@ -43,6 +43,7 @@
 #include <ros_podo_connector/RosPODO_ArmAction.h>
 #include <ros_podo_connector/RosPODO_GripperAction.h>
 #include <ros_podo_connector/RosPODO_TrajAction.h>
+#include <ros_podo_connector/RosPODO_TrajectoryAction.h>
 
 /*for TCP/IP socket client */
 #include <stdio.h>
@@ -137,9 +138,6 @@ void inter_joint_states_callback(const sensor_msgs::JointState& inter_joint_stat
     write(sock, &TXData, TXDataSize);
 }
 
-
-
-
 /*clear TXBuffer to default values*/
 void clearTXBuffer()
 {
@@ -173,7 +171,6 @@ void clearRXBuffer()
     //reset done flag
     RXData.podo2ros_data.Arm_feedback.result_flag = 0;
     RXData.podo2ros_data.Base_feedback.result_flag = 0;
-
 }
 
 
@@ -685,7 +682,6 @@ public:
         MOVE_RELATIVE
     };
 
-
     void executeCB(const ros_podo_connector::RosPODO_TrajGoalConstPtr &goal)
     {
         /* MOVEIT INTERFACE*/
@@ -836,9 +832,79 @@ public:
              //terminal status
             asTraj_.setAborted(result_);
         }
+
+        //debugging
+        asTraj_.setSucceeded(result_);
     }
 };
 /*========================== End of Traj Action Server ==================================*/
+
+/*========================== Start of Trajectory Action Server ==================================*/
+class RosPODO_TrajectoryAction
+{
+protected:
+
+    ros::NodeHandle nh_trajectory;
+    actionlib::SimpleActionServer<ros_podo_connector::RosPODO_TrajectoryAction> asTrajectory_;
+    std::string action_name_;
+
+    // create messages for publishing feedback&result
+    ros_podo_connector::RosPODO_TrajectoryFeedback feedback_;
+    ros_podo_connector::RosPODO_TrajectoryResult result_;
+
+public:
+
+    RosPODO_TrajectoryAction(std::string name) :
+        asTrajectory_(nh_trajectory, name, boost::bind(&RosPODO_TrajectoryAction::executeCB, this, _1), false),
+        action_name_(name)
+    {
+        asTrajectory_.start();
+    }
+
+    ~RosPODO_TrajectoryAction(void)
+    {
+
+    }
+
+    enum TRAJECTORY_CMD
+    {
+        MOVE_ABSOLUTE = 0,
+        MOVE_RELATIVE
+    };
+
+    void executeCB(const ros_podo_connector::RosPODO_TrajectoryGoalConstPtr &goal)
+    {
+        ROS_JOINTREF Traj_action[goal->num_points];
+
+
+        for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
+            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
+            {
+                Traj_action[p].joint[robot_j].reference = goal->via_point[p].joint[robot_j].reference;
+                Traj_action[p].joint[robot_j].GoalmsTime = goal->via_point[p].joint[robot_j].GoalmsTime;
+                Traj_action[p].joint[robot_j].ONOFF_control = goal->via_point[p].joint[robot_j].OnOffControl;
+            }
+        }
+
+        //debug: PRINT RESULTS
+//        for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
+//            std::cout << "Point: " << p << std::endl;
+//            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
+//                std::cout << "joint[" << robot_j << "].reference, time, onOff: " << Traj_action[p].joint[robot_j].reference << ", " << Traj_action[p].joint[robot_j].GoalmsTime << ", " << Traj_action[p].joint[robot_j].ONOFF_control<< std::endl;
+//        } std::cout << "********************" << std::endl;
+
+        //WRITE TRAJECTORY TO PODO (Port 7000)
+        write(sock_traj, &Traj_action, sizeof(Traj_action));
+
+        //WRITE TO PODO (Port 5500; Send MODE CMD)
+        TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
+        write(sock, &TXData, TXDataSize);
+
+        asTrajectory_.setSucceeded(result_);
+    }
+
+};
+/*========================== End of Trajectory Action Server ==================================*/
 
 
 
@@ -1045,6 +1111,7 @@ int main(int argc, char **argv)
     RosPODO_ArmAction rospodo_arm("rospodo_arm");
     RosPODO_GripperAction rospodo_gripper("rospodo_gripper");
     RosPODO_TrajAction rospodo_Traj("rospodo_traj");
+    RosPODO_TrajectoryAction rospodo_Trajectory("rospodo_trajectory");
     ROS_INFO("Starting ROS2PODO Action Servers");
 
     

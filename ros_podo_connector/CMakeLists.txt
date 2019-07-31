@@ -44,6 +44,7 @@ find_package(Boost REQUIRED COMPONENTS system)
    FILES
    JointData.msg
    WbikData.msg
+   JointDataSet.msg
 )
 
 ## Generate actions in the 'action' folder
@@ -54,6 +55,7 @@ find_package(Boost REQUIRED COMPONENTS system)
    RosPODO_Arm.action
    RosPODO_Gripper.action
    RosPODO_Traj.action
+   RosPODO_Trajectory.action
  )
 
 ## Generate added messages and services with any dependencies listed here
@@ -96,15 +98,21 @@ add_executable(store_action src/store_application_client.cpp)
 add_dependencies(store_action ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(store_action ${catkin_LIBRARIES})
 
+
+#node for joint_states action Client
+add_executable(joint_publish_client src/joint_publish_client.cpp)
+add_dependencies(joint_publish_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(joint_publish_client ${catkin_LIBRARIES})
+
 #node for joint publish mode: topic publisher
 add_executable(joint_publish_pub src/joint_publish_pub.cpp)
 add_dependencies(joint_publish_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(joint_publish_pub ${catkin_LIBRARIES})
 
 #TEST_subscribe & write a text file
-#add_executable(sub_test src/sub_test.cpp)
-#add_dependencies(sub_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(sub_test ${catkin_LIBRARIES})
+add_executable(sub_test src/sub_test.cpp)
+add_dependencies(sub_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(sub_test ${catkin_LIBRARIES})
 
 #TEST_10Hz Publish
 add_executable(joint_publish_test1 src/joint_publish_test1.cpp)
@@ -121,6 +129,12 @@ include_directories(${THIS_PACKAGE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${Boost_
 add_executable(traj_request_client src/traj_request_client.cpp)
 add_dependencies(traj_request_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(traj_request_client ${catkin_LIBRARIES})
+
+#Trajectory(traj. from client to Server) Request
+include_directories(${THIS_PACKAGE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIRS})
+add_executable(traj_send_client src/traj_send_client.cpp)
+add_dependencies(traj_send_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(traj_send_client ${catkin_LIBRARIES})
 
 catkin_package(
 #  INCLUDE_DIRS include

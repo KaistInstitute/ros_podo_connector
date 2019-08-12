@@ -44,7 +44,7 @@ typedef struct _ROS_SHM_
 {
     ROS_COMMAND COMMAND;
 
-    int ROSindex;
+    int ROSindex;    
     int DoneFlag;
     MANIPULATOR_ACTION  Arm_action;
     BASE_ACTION         Base_action;

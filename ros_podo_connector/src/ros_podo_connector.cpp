@@ -127,6 +127,11 @@ const std::string JointBufferNameList[NUM_JOINTS] = {
 ros::Subscriber inter_joint_states_sub;
 sensor_msgs::JointState inter_joint_states;
 
+//Encoder Feedback publisher
+ros::Publisher encoder_feedback_pub;
+sensor_msgs::JointState encoder_joint_states;
+
+
 
 /* CB for inter_joint_state(interpolated joint_states) */
 void inter_joint_states_callback(const sensor_msgs::JointState& inter_joint_state_msg){
@@ -883,35 +888,36 @@ public:
                 Traj_action[p].joint[robot_j].reference = goal->via_point[p].joint[robot_j].reference;
                 Traj_action[p].joint[robot_j].GoalmsTime = goal->via_point[p].joint[robot_j].GoalmsTime;
                 Traj_action[p].joint[robot_j].ONOFF_control = goal->via_point[p].joint[robot_j].OnOffControl;
-                
-		
-	    }
-	    if(p==0)
-	    {
-		Traj_action[p].StartFlag = true;
-	    }
-	    else
-		Traj_action[p].StartFlag = false;
+            }
 
-            if(p==goal->num_points-1)
-            {
-		Traj_action[p].DoneFlag = true;
-	    }
-	    else
-		Traj_action[p].DoneFlag = false;
 
+            if(p==0)
+                        {
+                            Traj_action[p].StartFlag = true;
+                        }
+                        else
+                            Traj_action[p].StartFlag = false;
+
+                        if(p==goal->num_points-1)
+                        {
+                            Traj_action[p].DoneFlag = true;
+                        }
+                        else
+                            Traj_action[p].DoneFlag = false;
         }
 
         //debug: PRINT RESULTS
-        for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
-            std::cout << "Point: " << p << std::endl;
-            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
-                std::cout << "joint[" << robot_j << "].reference, time, onOff: " << Traj_action[p].joint[robot_j].reference << ", " << Traj_action[p].joint[robot_j].GoalmsTime << ", " << Traj_action[p].joint[robot_j].ONOFF_control<< ", " << Traj_action[p].StartFlag << ", " << Traj_action[p].DoneFlag << std::endl;
-        } std::cout << "********************" << std::endl;
+//        for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
+//            std::cout << "Point: " << p << std::endl;
+//            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
+//                std::cout << "joint[" << robot_j << "].reference, time, onOff: " << Traj_action[p].joint[robot_j].reference << ", " << Traj_action[p].joint[robot_j].GoalmsTime << ", " << Traj_action[p].joint[robot_j].ONOFF_control<< std::endl;
+//        } std::cout << "********************" << std::endl;
+
+
 
         //WRITE TRAJECTORY TO PODO (Port 7000)
         write(sock_traj, &Traj_action, sizeof(Traj_action));
-	ROS_ERROR("size: %f", sizeof(Traj_action));
+        ROS_ERROR("size: %f", sizeof(Traj_action));
 
         //WRITE TO PODO (Port 5500; Send MODE CMD)
         TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
@@ -943,7 +949,7 @@ void printInitialInfo()
 int initializeSocket()
 {
     FILE *fpNet = NULL;
-    fpNet = fopen("/home/sgvr/catkin_ws/src/ros_podo_connector/settings/network.txt", "r");
+    fpNet = fopen("/home/rainbow/catkin_ws/src/ros_podo_connector/ros_podo_connector/settings/network.txt", "r");
     if(fpNet == NULL){
         std::cout << ">>> Network File Open Error..!!" << std::endl;
         sprintf(ip, PODO_ADDR);
@@ -1119,7 +1125,15 @@ int main(int argc, char **argv)
 
 
     inter_joint_states_sub = n.subscribe("inter_joint_states", 100, inter_joint_states_callback);
-    
+    encoder_feedback_pub = n.advertise<sensor_msgs::JointState>("encoder_joint_states",1);
+
+    //initialize
+    encoder_joint_states.name.resize(NUM_JOINTS);
+    encoder_joint_states.position.resize(NUM_JOINTS);
+    for(int i; i < NUM_JOINTS; i++)
+        encoder_joint_states.name[i] = JointBufferNameList[i] ;
+
+
     // Create Socket
     initializeSocket();
 
@@ -1131,7 +1145,8 @@ int main(int argc, char **argv)
     RosPODO_TrajectoryAction rospodo_Trajectory("rospodo_trajectory");
     ROS_INFO("Starting ROS2PODO Action Servers");
 
-    
+
+
 
     /* === main while loop to RX feedback calls at regular periods === */
     while(ros::ok())
@@ -1140,8 +1155,13 @@ int main(int argc, char **argv)
         //update RX values from PODO
         LANthread_update();
 
-        //check if action server is active
+        //Encoder Feedback Topic
+        for(int i=0; i < NUM_JOINTS; i++)
+            encoder_joint_states.position[i] = RXData.podo2ros_data.Arm_feedback.joint[i].reference;
+        encoder_feedback_pub.publish(encoder_joint_states);
 
+
+        //check if action server is active
         if(rospodo_base.returnServerStatus())
         {
             rospodo_base.publishFeedback();
@@ -1159,8 +1179,9 @@ int main(int argc, char **argv)
             rospodo_gripper.publishResult();
         }
 
-        //loop at desired rate
         ros::spinOnce();
+
+        //loop at desired rate
         loop_rate.sleep();
     }
 

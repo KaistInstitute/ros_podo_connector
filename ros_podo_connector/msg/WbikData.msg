@@ -4,4 +4,3 @@ float64[3] goal_position
 float64[4] goal_orientation
 float64 goal_angle
 float64 GoalmsTime
-

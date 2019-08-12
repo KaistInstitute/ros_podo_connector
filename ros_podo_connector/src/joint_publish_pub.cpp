@@ -67,12 +67,6 @@ int main (int argc, char **argv)
     // true causes the client to spin its own thread
     actionlib::SimpleActionClient<ros_podo_connector::RosPODO_ArmAction> ac_arm("rospodo_arm", true);
 
-    ros::NodeHandle nh("~");
-    int param = 500; double freq = 200;
-    nh.getParam("param", param);
-    nh.getParam("freq", freq);
-
-
     ROS_INFO("Waiting for action server to start.");
     // wait for the action server to start
     ac_arm.waitForServer();       //will wait for infinite time
@@ -98,15 +92,12 @@ int main (int argc, char **argv)
 
 
     double d_ref[NUM_JOINTS];
-//    ros::Rate loop_rate(200);
-    ros::Rate loop_rate(freq);
-
+    ros::Rate loop_rate(200);
 
     static int pub_cnt = 0;
 
     //Subscribe topic "joint_states"
-//    while(ros::ok())
-    while(pub_cnt < param)
+    while(ros::ok())
     {
         ros::spinOnce();
 

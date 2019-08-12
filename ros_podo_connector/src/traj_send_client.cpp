@@ -135,7 +135,6 @@ int main (int argc, char **argv)
     }
 
 
-
     /* ============== MoveIT! Planning ===============  */
     move_group.setPoseTarget(target_pose1);
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;

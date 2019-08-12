@@ -64,11 +64,6 @@ int main (int argc, char **argv)
 {
     ros::init(argc, argv, "joint_publish_client");
 
-    ros::NodeHandle nh("~");
-    int param = 500; double freq = 200;
-    nh.getParam("param", param);
-    nh.getParam("freq",freq);
-
     // create the action client
     // true causes the client to spin its own thread
     actionlib::SimpleActionClient<ros_podo_connector::RosPODO_BaseAction> ac_base("rospodo_base", true);
@@ -112,21 +107,16 @@ int main (int argc, char **argv)
     double beginTime_d = ros::Time::now().toSec();
     double nowNow;
 
-    //ros::Rate loop_rate(200);
-    ros::Rate loop_rate(freq);
+    ros::Rate loop_rate(200);
+
     double d_ref[NUM_JOINTS-3];
 
-    //delay test
-    int test_cnt=0;
-
     //Subscribe topic "joint_states"
-    while(test_cnt < param )//(ros::ok())
+    while(ros::ok())
     {
-
-        std::cout << "test_cnt " << test_cnt++ << std::endl;
-
         ros::spinOnce();
         nowNow = ros::Time::now().toSec();
+        std::cout << "last loop took " << (nowNow - beginTime_d) * 1000 << "msecs." << std::endl;
 
         //First CB called
         if(CB_flag == 1){
@@ -155,13 +145,13 @@ int main (int argc, char **argv)
             goal_arm.jointmove_cmd = MODE_JOINT_PUBLISH;
 
             //debugging(publishing a topic for sub_test node)
-            //inter_joint_states_pub.publish(inter_joint_states);     //debugging
+            inter_joint_states_pub.publish(inter_joint_states);     //debugging
 
             // send a goal to the action
             ac_arm.sendGoal(goal_arm);
 
-            static int cnt_toServer = 0;
-            //std::cout << "count to Server: " << cnt_toServer++ << std::endl;
+//            static int cnt_toServer = 0;
+//            std::cout << "count to Server: " << cnt_toServer++ << std::endl;
         }
 
         loop_cnt++;

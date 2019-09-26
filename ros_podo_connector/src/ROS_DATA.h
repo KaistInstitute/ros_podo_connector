@@ -61,6 +61,9 @@ typedef struct _WHEELMOVE_DATA_
     double MoveX;
     double MoveY;
     double ThetaDeg;
+    double VelX;
+    double VelY;
+    double VelTheta;
 }WHEELMOVE_DATA;
 
 
@@ -72,10 +75,6 @@ typedef struct _ROS_ACTION_MANIPULATOR_
     int result_flag;
 }MANIPULATOR_ACTION;
 
-//typedef struct _ROS_ACTION_TRAJECTORY_
-//{
-//    JOINT_DATA joint[NUM_JOINTS];
-//}__attribute__((packed))TRAJECTORY_ACTION;
 
 typedef struct _ROS_ACTION_BASE_
 {

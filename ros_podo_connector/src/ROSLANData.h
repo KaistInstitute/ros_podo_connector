@@ -42,4 +42,11 @@ typedef struct __LAN_STRUCT_PODO2ROS__
     PODO2ROS_DATA podo2ros_data;
 } LAN_PODO2ROS, *pLAN_PODO2ROS;
 
+typedef struct __LAN_JOINT_REFERENCE__
+{
+    JOINT_DATA joint_ref[NUM_JOINTS];
+    int DoneFlag;
+    int StartFlag;
+}__attribute__((packed))LAN_JOINTREF;
+
 #endif // ROSLANDATA_H

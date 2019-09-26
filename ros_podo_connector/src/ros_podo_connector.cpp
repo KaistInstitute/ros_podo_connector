@@ -20,12 +20,12 @@
  * 			/rospodo_arm/goal
 			/rospodo_gripper/goal
  
- * 
+ * E-mail : ml634@kaist.ac.kr     (Moonyoung Lee)
  * E-mail : blike4@kaist.ac.kr    (Heo Yujin)
  * E-mail : chosaihim@kaist.ac.kr (Cho Saihim)
  *
  * Versions :
- * v1.0.2019.05
+ * v2.0.2019.09
  * =============================================================
  */
  
@@ -229,6 +229,12 @@ public:
       TXData.ros2podo_data.Base_action.wheel.MoveX = goal->MoveX;
       TXData.ros2podo_data.Base_action.wheel.MoveY = goal->MoveY;
       TXData.ros2podo_data.Base_action.wheel.ThetaDeg = goal->ThetaDeg;
+      
+      
+      TXData.ros2podo_data.Base_action.wheel.VelX = goal->VelX;
+      TXData.ros2podo_data.Base_action.wheel.VelY = goal->VelY;
+      TXData.ros2podo_data.Base_action.wheel.VelTheta = goal->VelTheta;
+      ROS_INFO("%f\t%f\t%f\n",goal->VelX,goal->VelY,goal->VelTheta);
       write(sock, &TXData, TXDataSize);
 
       ROS_INFO("CMD Grip: %i, Base: %i, Arm: %i, \n",TXData.ros2podo_data.CMD_GRIPPER,  TXData.ros2podo_data.CMD_WHEEL, TXData.ros2podo_data.CMD_JOINT);
@@ -689,6 +695,10 @@ public:
 
     void executeCB(const ros_podo_connector::RosPODO_TrajGoalConstPtr &goal)
     {
+
+
+        std::cout << "traj Action Recieved." << std::endl;
+
         /* MOVEIT INTERFACE*/
         // Setup
         // static const std::string PLANNING_GROUP = "L_arm";
@@ -857,6 +867,10 @@ protected:
     ros_podo_connector::RosPODO_TrajectoryFeedback feedback_;
     ros_podo_connector::RosPODO_TrajectoryResult result_;
 
+    //Result flag from PODO
+    bool trajectorySuccess = false;
+    bool motionStarted = false;
+
 public:
 
     RosPODO_TrajectoryAction(std::string name) :
@@ -879,53 +893,85 @@ public:
 
     void executeCB(const ros_podo_connector::RosPODO_TrajectoryGoalConstPtr &goal)
     {
+//        std::cout << "trajectory Action Recieved." << std::endl;
+
         ROS_JOINTREF Traj_action[goal->num_points];
 
+        ros::Rate r(200);
+        trajectorySuccess = false;
 
         for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
-            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
+            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: robot joints
             {
                 Traj_action[p].joint[robot_j].reference = goal->via_point[p].joint[robot_j].reference;
                 Traj_action[p].joint[robot_j].GoalmsTime = goal->via_point[p].joint[robot_j].GoalmsTime;
                 Traj_action[p].joint[robot_j].ONOFF_control = goal->via_point[p].joint[robot_j].OnOffControl;
             }
 
-
             if(p==0)
-                        {
-                            Traj_action[p].StartFlag = true;
-                        }
-                        else
-                            Traj_action[p].StartFlag = false;
+                Traj_action[p].StartFlag = true;
+            else
+                Traj_action[p].StartFlag = false;
 
-                        if(p==goal->num_points-1)
-                        {
-                            Traj_action[p].DoneFlag = true;
-                        }
-                        else
-                            Traj_action[p].DoneFlag = false;
+            if(p==goal->num_points-1)
+                Traj_action[p].DoneFlag = true;
+            else
+                Traj_action[p].DoneFlag = false;
         }
-
-        //debug: PRINT RESULTS
-//        for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
-//            std::cout << "Point: " << p << std::endl;
-//            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: roboto joints
-//                std::cout << "joint[" << robot_j << "].reference, time, onOff: " << Traj_action[p].joint[robot_j].reference << ", " << Traj_action[p].joint[robot_j].GoalmsTime << ", " << Traj_action[p].joint[robot_j].ONOFF_control<< std::endl;
-//        } std::cout << "********************" << std::endl;
-
 
 
         //WRITE TRAJECTORY TO PODO (Port 7000)
         write(sock_traj, &Traj_action, sizeof(Traj_action));
-        ROS_ERROR("size: %f", sizeof(Traj_action));
+        //ROS_ERROR("size: %f", sizeof(Traj_action));
 
         //WRITE TO PODO (Port 5500; Send MODE CMD)
         TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
         write(sock, &TXData, TXDataSize);
 
+        //while loop to check until goal is finished
+        while(trajectorySuccess == false)
+        {
+            r.sleep();
+        }
+
         asTrajectory_.setSucceeded(result_);
     }
+    
+    /* clear flags upon finishing action */
+    void clearTXFlag()
+    {
+        //reset command
+        TXData.ros2podo_data.CMD_JOINT = static_cast<JOINTMOVE_CMD>(0);
 
+        //reset action data
+        TXData.ros2podo_data.Arm_action.result_flag = 0;
+    }
+
+
+    /* update result action topic*/
+    void publishResult()
+    {
+        static int motionStartedTick = 0;
+        //wait for RX flag update 1 sec
+        if(motionStartedTick > 200)  {motionStarted = true;}
+        motionStartedTick++;
+
+        if(motionStarted == true && RXData.podo2ros_data.Arm_feedback.result_flag == true)
+        {
+            result_.result_flag = 1;
+            ROS_INFO("Finished Trajectory: %i\n", result_.result_flag );
+            motionStarted = false;
+            trajectorySuccess = true;
+            motionStartedTick = 0;
+        }
+    }
+
+    //1 if alive, 0 else
+    int returnServerStatus()
+    {
+        if(asTrajectory_.isActive()) { return 1; }
+        else { return 0; }
+    }
 };
 /*========================== End of Trajectory Action Server ==================================*/
 
@@ -949,7 +995,7 @@ void printInitialInfo()
 int initializeSocket()
 {
     FILE *fpNet = NULL;
-    fpNet = fopen("/home/rainbow/catkin_ws/src/ros_podo_connector/ros_podo_connector/settings/network.txt", "r");
+    fpNet = fopen("/home/sgvr/catkin_ws/src/ros_podo_connector/settings/network.txt", "r");
     if(fpNet == NULL){
         std::cout << ">>> Network File Open Error..!!" << std::endl;
         sprintf(ip, PODO_ADDR);
@@ -1177,6 +1223,12 @@ int main(int argc, char **argv)
         if(rospodo_gripper.returnServerStatus())
         {
             rospodo_gripper.publishResult();
+        }
+
+
+        if(rospodo_Trajectory.returnServerStatus())
+        {
+            rospodo_Trajectory.publishResult();
         }
 
         ros::spinOnce();

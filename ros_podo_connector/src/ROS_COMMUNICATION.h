@@ -6,7 +6,7 @@
 #include "ROS_COMMAND.h"
 #include "ROS_DATA.h"
 #include "PODO_STATE.h"
-
+ 
 typedef struct _ROS2PODO_DATA_
 {
     JOINTMOVE_CMD       CMD_JOINT;
@@ -39,31 +39,5 @@ typedef struct _ROS_JOINTREF_
     int DoneFlag;
     int StartFlag;
 }__attribute__((packed))ROS_JOINTREF;
-
-typedef struct _ROS_SHM_
-{
-    ROS_COMMAND COMMAND;
-
-    int ROSindex;    
-    int DoneFlag;
-    MANIPULATOR_ACTION  Arm_action;
-    BASE_ACTION         Base_action;
-    GRIPPER_ACTION      Gripper_action;
-
-    MANIPULATOR_ACTION  Arm_feedback;
-    BASE_ACTION         Base_feedback;
-    GRIPPER_ACTION      Gripper_feedback;
-
-    JOINT_DATA joint_before[NUM_JOINTS];
-    ROBOT_STATE_ARM  state_arm;
-    ROBOT_STATE_BASE state_base;
-
-    float                   *refs_Addr;
-    ROS_JOINTREF             ref;
-    int                      refsLen;
-    double                   refsGoalTime[NUM_JOINTS];
-
-}ROS_SHM, *pROS_SHM;
-
 
 #endif // ROSCOMM_H

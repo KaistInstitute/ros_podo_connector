@@ -188,7 +188,7 @@ int main (int argc, char **argv)
         ac_trajectory.sendGoal(goal_trajectory);
 
         //wait for the action to return
-        bool finished_before_timeout = ac_trajectory.waitForResult(ros::Duration(10.0));
+        bool finished_before_timeout = ac_trajectory.waitForResult(ros::Duration(100.0));
 
         if (finished_before_timeout)
         {
@@ -198,13 +198,36 @@ int main (int argc, char **argv)
         else
             ROS_INFO("Action did not finish before the time out.");
 
-
     }
 
     //exit
     nh.deleteParam("mode"); nh.deleteParam("plangroup");
     nh.deleteParam("x"); nh.deleteParam("y"); nh.deleteParam("z");
     nh.deleteParam("w"); nh.deleteParam("wx"); nh.deleteParam("wy"); nh.deleteParam("wz");
+
+
+
+	//****************Gripper TEST******************
+	/*=============== Gripper action things ===========*/
+	actionlib::SimpleActionClient<ros_podo_connector::RosPODO_GripperAction> ac_gripper("rospodo_gripper", true);
+	ac_gripper.waitForServer(); //will wait for infinite time
+	ros_podo_connector::RosPODO_GripperGoal goal_gripper;
+
+	/* ============== Grasp Action ==============  */
+	goal_gripper.grippermove_cmd = GRIPPER_OPEN;
+	goal_gripper.mode = GRIPPER_RIGHT;
+	std::cout << "Sending gripper goal" << std::endl;
+	ac_gripper.sendGoal(goal_gripper);
+	  	  
+	//wait for the action to return
+	bool finished_before_timeout_gripper = ac_gripper.waitForResult(ros::Duration(100.0));
+	if (finished_before_timeout_gripper){
+		actionlib::SimpleClientGoalState state = ac_gripper.getState();
+		ROS_INFO("Gripper closed: %s",state.toString().c_str());
+	}
+	else
+		ROS_INFO("Gripper open did not finish before the time out.");
+	//*************Gripper TEST END***************
 
     return 0;
 }

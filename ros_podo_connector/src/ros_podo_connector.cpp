@@ -962,6 +962,13 @@ public:
             ROS_INFO("Finished Trajectory: %i\n", result_.result_flag );
             motionStarted = false;
             trajectorySuccess = true;
+            
+            //reset command
+			TXData.ros2podo_data.CMD_JOINT = static_cast<JOINTMOVE_CMD>(0);
+
+			//reset action data	
+			TXData.ros2podo_data.Arm_action.result_flag = 0;
+			
             motionStartedTick = 0;
         }
     }

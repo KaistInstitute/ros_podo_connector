@@ -234,17 +234,27 @@ public:
       TXData.ros2podo_data.Base_action.wheel.VelX = goal->VelX;
       TXData.ros2podo_data.Base_action.wheel.VelY = goal->VelY;
       TXData.ros2podo_data.Base_action.wheel.VelTheta = goal->VelTheta;
-      ROS_INFO("%f\t%f\t%f\n",goal->VelX,goal->VelY,goal->VelTheta);
+      //ROS_INFO("%f\t%f\t%f\n",goal->VelX,goal->VelY,goal->VelTheta);
       write(sock, &TXData, TXDataSize);
 
       ROS_INFO("CMD Grip: %i, Base: %i, Arm: %i, \n",TXData.ros2podo_data.CMD_GRIPPER,  TXData.ros2podo_data.CMD_WHEEL, TXData.ros2podo_data.CMD_JOINT);
-
-
-      //while loop to check until goal is finished
-      while(baseMotionSuccess == false)
+    
+    
+	  //multi request base move (velocity-based)
+      if(TXData.ros2podo_data.CMD_WHEEL == WHEEL_MOVE_VELOCITY) 
       {
-          r.sleep();
-      }
+		  ; //dont wait for result
+	  }
+	  
+	  //single request base move (position-based) 
+	  else 
+	  {
+		  //while loop to check until goal is finished
+		  while(baseMotionSuccess == false)
+		  {
+			  r.sleep();
+		  }
+	  }
 
       asBase_.setSucceeded(result_);
   }
@@ -277,6 +287,9 @@ public:
       TXData.ros2podo_data.Base_action.wheel.MoveX = 0;
       TXData.ros2podo_data.Base_action.wheel.MoveY = 0;
       TXData.ros2podo_data.Base_action.wheel.ThetaDeg = 0;
+      TXData.ros2podo_data.Base_action.wheel.VelX = 0;
+      TXData.ros2podo_data.Base_action.wheel.VelY = 0;
+      TXData.ros2podo_data.Base_action.wheel.VelTheta = 0;
       TXData.ros2podo_data.Base_action.result_flag = 0;
 
   }
@@ -284,25 +297,30 @@ public:
   /* update result action topic*/
   void publishResult()
   {
-      static int motionStartedTick = 0;
-      //wait for RX flag update 1 sec
-      if(motionStartedTick > 200)  {motionStarted = true;}
-      motionStartedTick++;
+	  
+	  static int motionStartedTick = 0;
+	  //wait for RX flag update 1 sec
+	  if(motionStartedTick > 200)  {motionStarted = true;}
+	  motionStartedTick++;
+		  
+	  if(motionStarted == true && RXData.podo2ros_data.Base_feedback.result_flag == true )
+	  {
+		  //write result
+		  result_.MoveX = feedback_.MoveX;
+		  result_.MoveY = feedback_.MoveY;
+		  result_.ThetaDeg = feedback_.ThetaDeg;
+		  result_.result_flag = 1;
+		  ROS_INFO("Finished base action: %i\n", result_.result_flag );
+		  ROS_INFO("base result inside: %i\n", RXData.podo2ros_data.Base_feedback.result_flag);
+		  //reset flags
+		  clearTXFlag();
+		  baseMotionSuccess = true;
+		  motionStarted = false;
+		  motionStartedTick = 0;
+	  }
+	  
 
-      if(motionStarted == true && RXData.podo2ros_data.Base_feedback.result_flag == true )
-      {
-          //write result
-          result_.MoveX = feedback_.MoveX;
-          result_.MoveY = feedback_.MoveY;
-          result_.ThetaDeg = feedback_.ThetaDeg;
-          result_.result_flag = 1;
-          ROS_INFO("Finished base action: %i\n", result_.result_flag );
-          //reset flags
-          clearTXFlag();
-          baseMotionSuccess = true;
-          motionStarted = false;
-          motionStartedTick = 0;
-      }
+      
   }
 
   //1 if alive, 0 else

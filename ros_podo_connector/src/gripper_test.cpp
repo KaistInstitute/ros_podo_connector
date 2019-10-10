@@ -46,9 +46,10 @@ int main (int argc, char **argv)
     goal_gripper.mode = GRIPPER_RIGHT;
 
     ac_gripper.sendGoal(goal_gripper);
+    ROS_INFO("Gripper OPEN");
 
     //wait for the action to return
-    bool finished_before_timeout = ac_gripper.waitForResult(ros::Duration(60.0));
+    bool finished_before_timeout = ac_gripper.waitForResult(ros::Duration(20.0));
 
     if (finished_before_timeout)
     {
@@ -63,6 +64,7 @@ int main (int argc, char **argv)
     goal_gripper.mode = GRIPPER_RIGHT;
 
     ac_gripper.sendGoal(goal_gripper);
+    ROS_INFO("Gripper CLOSE");
 
     //wait for the action to return
     //bool finished_before_timeout = ac_gripper.waitForResult(ros::Duration(60.0));

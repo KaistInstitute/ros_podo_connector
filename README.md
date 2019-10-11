@@ -16,7 +16,7 @@ high-level task planning for more complex sequence of behaviors
 ## Tutorial & Maunal
 Can be found in this link: </br>
 
-http://www.kirobotics.com/w/index.php?title=Hand:ROSmotion_Page
+http://www.kirobotics.com/w/index.php?title=ROSmotion_Page
 
 Maintainers
 ----

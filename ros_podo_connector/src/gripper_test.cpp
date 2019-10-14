@@ -21,12 +21,12 @@ int main (int argc, char **argv)
 
   ROS_INFO("Waiting for action server to start.");
   // wait for the action server to start
-  ac_base.waitForServer(); //will wait for infinite time
-  ac_arm.waitForServer(); //will wait for infinite time
+  //ac_base.waitForServer(); //will wait for infinite time
+  //ac_arm.waitForServer(); //will wait for infinite time
   ac_gripper.waitForServer(); //will wait for infinite time
-
-  ROS_INFO("Action server started, sending goal.");
   
+  
+  ROS_INFO("Wait for it...");
   // send a goal to the action
   ros_podo_connector::RosPODO_BaseGoal goal_base;
   ros_podo_connector::RosPODO_ArmGoal goal_arm;
@@ -38,18 +38,26 @@ int main (int argc, char **argv)
   ros_podo_connector::RosPODO_GripperResult result_gripper;
   
 
-  while(1)
+
+  ROS_INFO("Action server started, sending goal.");
+  
+  int cnt =0;
+  while(cnt<5)
   {
+	cnt++;
     /* ============== Gripper Data Action  ==============  */
     //OPEN============
     goal_gripper.grippermove_cmd = GRIPPER_OPEN;
+    
+    std::cout << "cmd: " << goal_gripper.grippermove_cmd << std::endl;	
+    
     goal_gripper.mode = GRIPPER_RIGHT;
 
     ac_gripper.sendGoal(goal_gripper);
     ROS_INFO("Gripper OPEN");
 
     //wait for the action to return
-    bool finished_before_timeout = ac_gripper.waitForResult(ros::Duration(20.0));
+    bool finished_before_timeout = ac_gripper.waitForResult(ros::Duration(60.0));
 
     if (finished_before_timeout)
     {
@@ -58,10 +66,13 @@ int main (int argc, char **argv)
     }
     else
       ROS_INFO("Action did not finish before the time out.");
+      
+      
 
     //CLOSE===========
     goal_gripper.grippermove_cmd = GRIPPER_CLOSE;
     goal_gripper.mode = GRIPPER_RIGHT;
+    std::cout << "cmd: " << goal_gripper.grippermove_cmd << std::endl;	
 
     ac_gripper.sendGoal(goal_gripper);
     ROS_INFO("Gripper CLOSE");
@@ -76,6 +87,11 @@ int main (int argc, char **argv)
     }
     else
       ROS_INFO("Action did not finish before the time out.");
+      
+      
+      
+   ros::Duration(2).sleep();
+   
   }
 
 

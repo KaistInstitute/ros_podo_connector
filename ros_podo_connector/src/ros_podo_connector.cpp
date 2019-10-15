@@ -241,7 +241,7 @@ public:
     
     
 	  //multi request base move (velocity-based)
-      if(TXData.ros2podo_data.CMD_WHEEL == WHEEL_MOVE_VELOCITY) 
+      if(TXData.ros2podo_data.CMD_WHEEL == WHEEL_MOVE_VELOCITY || TXData.ros2podo_data.CMD_WHEEL == WHEEL_MOVE_STOP ) 
       {
 		  ; //dont wait for result
 	  }
@@ -613,6 +613,10 @@ public:
         gripperMotionSuccess = false;
 
         //=====execute action for robot motion========
+        
+        //Debugging
+        std::cout << "goal gripper mode = " << goal->grippermove_cmd << std::endl;
+        
         TXData.ros2podo_data.CMD_GRIPPER = static_cast<GRIPPERMOVE_CMD>(goal->grippermove_cmd);
         TXData.ros2podo_data.Gripper_action.side = goal->mode;
 
@@ -650,9 +654,10 @@ public:
         if(motionStartedTick > 200)  {motionStarted = true;}
         motionStartedTick++;
 
+		//debugging
+		//std::cout << "RX.gripper result_flag = " << RXData.podo2ros_data.Gripper_feedback.result_flag << std::endl;
         if(motionStarted == true && RXData.podo2ros_data.Gripper_feedback.result_flag == true )
         {
-
             result_.result_flag = 1;
             ROS_INFO("Finished Gripper action: %i\n", result_.result_flag );
             clearTXFlag();

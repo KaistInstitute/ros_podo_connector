@@ -53,7 +53,7 @@ int main (int argc, char **argv)
     // handler for parameters
     ros::NodeHandle nh("~");
     //Set variables and initial values(default values)
-    std::string move_mode = "RELATIVE", plan_group = "L_arm";
+    std::string move_mode = "RELATIVE", plan_group = "Rarm";
     double x_goal = 0., y_goal=0., z_goal=0., w_goal=0., wx_goal = 0., wy_goal = 0.,  wz_goal = 0.;
 
     //get parameters
@@ -181,11 +181,20 @@ int main (int argc, char **argv)
         }
 
 
+		//Debugging
+		/*
+		std::cout << "Traj. # points: " << traj_size << std::endl;
+        for(int i=0 ; i< traj_size; i++)
+			std::cout << "Elbow Joint: " << goal_trajectory.via_point[i].joint[3].reference <<std::endl;
+		*/
+		
+
 
         /* ============== Send Action Request ===============  */
 
         // send a goal to the server
         ac_trajectory.sendGoal(goal_trajectory);
+        
 
         //wait for the action to return
         bool finished_before_timeout = ac_trajectory.waitForResult(ros::Duration(100.0));

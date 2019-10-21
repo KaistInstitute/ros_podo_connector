@@ -111,9 +111,9 @@ add_dependencies(traj_send_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 target_link_libraries(traj_send_client ${catkin_LIBRARIES})
 
 #gripper Test
-add_executable(gripper_test src/gripper_test.cpp)
-add_dependencies(gripper_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(gripper_test ${catkin_LIBRARIES})
+#add_executable(gripper_test src/gripper_test.cpp)
+#add_dependencies(gripper_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(gripper_test ${catkin_LIBRARIES})
 
 catkin_package(
 #  INCLUDE_DIRS include

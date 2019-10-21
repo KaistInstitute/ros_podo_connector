@@ -945,7 +945,23 @@ public:
 
         //WRITE TRAJECTORY TO PODO (Port 7000)
         write(sock_traj, &Traj_action, sizeof(Traj_action));
-        //ROS_ERROR("size: %f", sizeof(Traj_action));
+        
+        //Debug
+        /*ROS_ERROR("size: %f", sizeof(Traj_action));
+        std::cout << "Num point: " << goal->num_points << std::endl;*/
+       
+       
+       for(int p=0; p<goal->num_points; p++){    //p: points of Trajectory
+            for(int robot_j=0; robot_j< NUM_JOINTS; robot_j++)    //robot_j: robot joints
+            {
+                std::cout << Traj_action[p].joint[robot_j].reference << ", " ;
+            }
+		std::cout << std::endl;
+		}
+
+
+
+
 
         //WRITE TO PODO (Port 5500; Send MODE CMD)
         TXData.ros2podo_data.CMD_JOINT = MODE_TRAJECTORY;
@@ -1025,7 +1041,7 @@ void printInitialInfo()
 int initializeSocket()
 {
     FILE *fpNet = NULL;
-    fpNet = fopen("/home/sgvr/catkin_ws/src/ros_podo_connector/settings/network.txt", "r");
+    fpNet = fopen("/home/user/catkin_ws/src/ros_podo_connector/ros_podo_connector/settings/network.txt", "r");
     if(fpNet == NULL){
         std::cout << ">>> Network File Open Error..!!" << std::endl;
         sprintf(ip, PODO_ADDR);
@@ -1098,7 +1114,7 @@ int Connect2Server()
 {
     if(connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0)
     {
-        std::cout << " Connection Failed" << std::endl;
+        //std::cout << " Connection Failed" << std::endl;
         return false;
     }
     std::cout << "Client connect to server!! (PODO_CONNECTOR)" << std::endl;
@@ -1109,7 +1125,7 @@ int Connect2ServerTraj()
 {
     if(connect(sock_traj, (struct sockaddr*)&server_traj, sizeof(server_traj)) < 0)
     {
-        std::cout << " Connection Failed TARJ" << std::endl;
+        //std::cout << " Connection Failed TARJ" << std::endl;
         return false;
     }
     std::cout << "Client connect to server_traj!! (PODO_CONNECTOR_TRAJ)" << std::endl;
